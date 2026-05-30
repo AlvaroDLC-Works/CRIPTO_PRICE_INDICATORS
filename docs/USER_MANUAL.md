@@ -18,6 +18,7 @@
 - `scripts/fetch_crypto_data.py`: descarga datos historicos OHLCV y los exporta a CSV.
 - `scripts/env_config_editor.py`: permite editar `config/.env` desde la terminal.
 - `scripts/env_config_fields_generator.py`: genera `config/env_config_fields.json` desde `config/.env.example`.
+- `scripts/analysis.py`: modulo reservado para analisis futuros.
 - `config/env_config_fields.json`: define los campos editables del menu de configuracion.
 - `config/.env.example`: plantilla de configuracion.
 - `requirements.txt`: lista de dependencias Python.
@@ -76,6 +77,7 @@ Opciones disponibles:
 
 - Descargar datos.
 - Editar configuracion `config/.env`.
+- Ejecutar analisis futuro. Actualmente muestra un aviso de modulo en construccion.
 - Abrir herramientas de mantenimiento.
 - Salir.
 

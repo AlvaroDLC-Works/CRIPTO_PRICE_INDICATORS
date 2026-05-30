@@ -22,8 +22,9 @@ def show_menu() -> None:
     print('\n=== CriptoPrice Menu ===')
     print('1) Descargar datos (fetch_crypto_data)')
     print('2) Editar configuracion (config/.env)')
-    print('3) Herramientas')
-    print('4) Salir')
+    print('3) Analisis')
+    print('4) Herramientas')
+    print('5) Salir')
     print(build_download_dashboard())
 
 
@@ -101,15 +102,17 @@ def tools_menu() -> None:
 def main() -> None:
     while True:
         show_menu()
-        choice = input('Selecciona una opcion [1-4]: ').strip()
+        choice = input('Selecciona una opcion [1-5]: ').strip()
 
         if choice == '1':
             run_script('scripts/fetch_crypto_data.py')
         elif choice == '2':
             run_script('scripts/env_config_editor.py')
         elif choice == '3':
-            tools_menu()
+            run_script('scripts/analysis.py')
         elif choice == '4':
+            tools_menu()
+        elif choice == '5':
             print('Saliendo...')
             break
         else:

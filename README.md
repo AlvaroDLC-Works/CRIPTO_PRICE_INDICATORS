@@ -16,6 +16,45 @@ Si PowerShell bloquea la ejecucion de scripts, usa:
 powershell -ExecutionPolicy Bypass -File .\CriptoPriceStart.ps1
 ```
 
+## Ejecucion rapida con parametros
+
+`CriptoPriceStart.ps1` puede recibir parametros para actualizar `config/.env` antes de abrir el menu. Si un parametro no se entrega, se conserva el valor actual de `config/.env`.
+
+Ejemplos:
+
+```powershell
+.\CriptoPriceStart.ps1 -Symbols BTC,ETH -Timeframe 1d
+```
+
+```powershell
+.\CriptoPriceStart.ps1 -Exchange binance -FallbackExchanges bybit,okx,kucoin -Symbols BTC -Timeframe 1w -Limit 1000 -Since 2026-03-01
+```
+
+Para preparar el ambiente, actualizar parametros y ejecutar la descarga inmediatamente:
+
+```powershell
+.\CriptoPriceStart.ps1 -Symbols BTC,ETH -Timeframe 1d -RunDownload
+```
+
+Para solicitar analisis despues de preparar el ambiente:
+
+```powershell
+.\CriptoPriceStart.ps1 -Symbols BTC -Timeframe 1w -Analysis
+```
+
+El modulo de analisis aun esta en construccion. Por ahora solo muestra un aviso y no modifica la descarga de data pura.
+
+Parametros disponibles:
+
+- `-Exchange`: exchange principal, por ejemplo `binance`.
+- `-FallbackExchanges`: exchanges alternativos separados por coma.
+- `-Symbols`: activos base separados por coma, por ejemplo `BTC,ETH`.
+- `-Timeframe`: periodo, por ejemplo `1d` o `1w`.
+- `-Limit`: cantidad de velas por batch.
+- `-Since`: fecha inicial, por ejemplo `2026-03-01`.
+- `-RunDownload`: ejecuta la descarga directamente despues de preparar el ambiente.
+- `-Analysis`: ejecuta el modulo de analisis. Actualmente muestra un mensaje de construccion.
+
 ## Configuracion
 
 Edita `config/.env` con los parametros principales:
@@ -37,6 +76,8 @@ El menu `Herramientas` permite ejecutar utilidades de mantenimiento:
 
 - Verificar o reparar el ambiente con `scripts/install.py`.
 - Regenerar `config/env_config_fields.json` desde `config/.env.example`.
+
+La opcion `Analisis` del menu principal esta reservada para futuros calculos. Actualmente muestra un mensaje de "en construccion" y no altera los CSV descargados.
 
 ## Uso
 

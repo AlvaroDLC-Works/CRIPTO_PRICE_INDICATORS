@@ -86,8 +86,9 @@ def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '1d', l
         raise ValueError(f'No se obtuvieron datos para {symbol} en {exchange_name}.')
 
     df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+    df['symbol'] = symbol
     df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
-    df = df[['datetime', 'open', 'high', 'low', 'close', 'volume']]
+    df = df[['symbol', 'datetime', 'open', 'high', 'low', 'close', 'volume']]
 
     if filename is None:
         safe_symbol = symbol.replace('/', '_')

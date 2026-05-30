@@ -25,7 +25,9 @@ python install.py
 python fetch_crypto_data.py
 ```
 
-Esto descarga datos OHLCV de 15 minutos para los símbolos configurados y genera CSVs.
+Esto descarga datos OHLCV para los símbolos configurados y genera CSVs.
+
+El código usa `enableRateLimit=True` en `ccxt` y reintentos con backoff para evitar exceder los límites del exchange. Descarga en batches grandes y evita muchas llamadas pequeñas.
 
 ## Pushear a GitHub con SSH
 

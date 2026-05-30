@@ -1,6 +1,7 @@
 import ccxt
 import pandas as pd
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,6 +38,22 @@ def load_config() -> dict:
     }
 
 
+def safe_fetch_ohlcv(exchange, symbol: str, timeframe: str, since: int | None = None, limit: int = 1000, max_retries: int = 5):
+    wait_seconds = 1
+    for attempt in range(1, max_retries + 1):
+        try:
+            if since is not None:
+                return exchange.fetch_ohlcv(symbol, timeframe=timeframe, since=since, limit=limit)
+            return exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+        except ccxt.BaseError as exc:
+            if attempt == max_retries:
+                raise
+            print(f'  Error de conexión o límite detectado: {exc}. Reintentando en {wait_seconds}s... (intento {attempt}/{max_retries})')
+            time.sleep(wait_seconds)
+            wait_seconds = min(wait_seconds * 2, 30)
+    raise RuntimeError('No se pudo obtener datos tras varios reintentos.')
+
+
 def fetch_ohlcv_all(exchange, symbol: str, timeframe: str, since_ms: int, limit: int = 1000):
     timeframe_ms = exchange.parse_timeframe(timeframe) * 1000
     all_ohlcv = []
@@ -46,7 +63,7 @@ def fetch_ohlcv_all(exchange, symbol: str, timeframe: str, since_ms: int, limit:
     while current_since < now:
         start_dt = datetime.fromtimestamp(current_since / 1000, tz=timezone.utc)
         print(f'  Descargando batch desde {start_dt:%Y-%m-%dT%H:%M:%SZ}')
-        batch = exchange.fetch_ohlcv(symbol, timeframe=timeframe, since=current_since, limit=limit)
+        batch = safe_fetch_ohlcv(exchange, symbol, timeframe, since=current_since, limit=limit)
         if not batch:
             break
 
@@ -61,6 +78,8 @@ def fetch_ohlcv_all(exchange, symbol: str, timeframe: str, since_ms: int, limit:
         current_since = last_ts + timeframe_ms
         if len(batch) < limit:
             break
+
+        time.sleep(exchange.rateLimit / 1000)
 
     return all_ohlcv
 
@@ -80,7 +99,7 @@ def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '1d', l
     if since_ms is not None:
         ohlcv = fetch_ohlcv_all(exchange, symbol, timeframe, since_ms, limit=limit)
     else:
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+        ohlcv = safe_fetch_ohlcv(exchange, symbol, timeframe, limit=limit)
 
     if not ohlcv:
         raise ValueError(f'No se obtuvieron datos para {symbol} en {exchange_name}.')

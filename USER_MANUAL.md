@@ -107,9 +107,11 @@ El nombre del archivo encaja con el exchange, el símbolo y el intervalo, por ej
 
 - `ccxt` usa la librería para conectarse al exchange, pero los límites son los que impone el exchange.
 - En Binance hay límite de requests por minuto y por segundo.
-- Usa `enableRateLimit=True` para que `ccxt` gestione pausas automáticamente.
+- El script usa `enableRateLimit=True` para que `ccxt` gestione las pausas automáticamente.
+- También incluye reintentos con backoff para manejar errores temporales o `429`.
 - Descarga datos en rangos grandes en lugar de muchas consultas pequeñas.
-- Si recibes errores `429` o timeouts, reduce la frecuencia de peticiones.
+- Si recibes errores `429`, `ExchangeError` o timeouts, espera y reduce la frecuencia de peticiones.
+- Ajusta `LIMIT` a valores altos y evita hacer demasiadas ejecuciones rápidas seguidas.
 
 ## 9. Publicar en GitHub
 

@@ -1,7 +1,9 @@
 __pycache__/
 *.py[cod]
-.env
+config/.env
+data/
 *.sqlite
 *.db
 .DS_Store
 .vscode/
+.venv/

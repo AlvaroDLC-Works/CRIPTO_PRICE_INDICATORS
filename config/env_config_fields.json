@@ -1,0 +1,24 @@
+{
+  "fields": [
+    {
+      "key": "EXCHANGE",
+      "label": "Exchange publico para datos OHLCV",
+      "default": "binance"
+    },
+    {
+      "key": "FALLBACK_EXCHANGES",
+      "label": "Exchanges alternativos si falla el principal",
+      "default": "bybit,okx,kucoin"
+    },
+    {
+      "key": "SYMBOLS",
+      "label": "Simbolos base separados por coma. La moneda de intercambio se asume USDT.",
+      "default": "BTC,ETH"
+    },
+    {
+      "key": "TIMEFRAME",
+      "label": "Intervalo de velas",
+      "default": "1d"
+    }
+  ]
+}

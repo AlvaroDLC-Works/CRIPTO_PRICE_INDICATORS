@@ -35,6 +35,13 @@ Configura `GITHUB_REMOTE` en el archivo `.env` con tu URL SSH:
 GITHUB_REMOTE=git@github.com:usuario/CriptoPrice.git
 ```
 
+Para datos históricos desde 2015 en intervalos diarios, ajusta también:
+
+```text
+TIMEFRAME=1d
+SINCE=2015-01-01
+```
+
 Luego ejecuta:
 
 ```powershell

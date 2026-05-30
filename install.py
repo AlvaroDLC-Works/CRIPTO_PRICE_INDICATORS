@@ -26,14 +26,15 @@ def load_env_file() -> None:
                 'GITHUB_REMOTE=git@github.com:username/CriptoPrice.git\n'
                 'EXCHANGE=binance\n'
                 'SYMBOLS=BTC/USDT,ETH/USDT\n'
-                'TIMEFRAME=15m\n'
+                'TIMEFRAME=1d\n'
                 'LIMIT=1000\n'
+                'SINCE=2015-01-01\n'
             )
             print('Se creó .env con valores de ejemplo.')
     else:
         print('.env encontrado.')
 
-    required_keys = ['GITHUB_REMOTE', 'EXCHANGE', 'SYMBOLS', 'TIMEFRAME', 'LIMIT']
+    required_keys = ['GITHUB_REMOTE', 'EXCHANGE', 'SYMBOLS', 'TIMEFRAME', 'LIMIT', 'SINCE']
     env_text = env_path.read_text()
     missing_keys = [key for key in required_keys if f'{key}=' not in env_text]
 

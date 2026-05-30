@@ -1,7 +1,21 @@
 import ccxt
 import pandas as pd
 import os
+from datetime import datetime, timezone
 from pathlib import Path
+
+
+def parse_since(value: str | None) -> int | None:
+    if not value:
+        return None
+
+    value = value.strip()
+    if value.isdigit():
+        ts = int(value)
+        return ts if ts > 1_000_000_000_000 else ts * 1000
+
+    dt = pd.to_datetime(value, utc=True)
+    return int(dt.timestamp() * 1000)
 
 
 def load_config() -> dict:
@@ -17,12 +31,41 @@ def load_config() -> dict:
     return {
         'exchange': os.getenv('EXCHANGE', 'binance').strip().lower(),
         'symbols': [symbol.strip() for symbol in os.getenv('SYMBOLS', 'BTC/USDT,ETH/USDT').split(',') if symbol.strip()],
-        'timeframe': os.getenv('TIMEFRAME', '15m').strip(),
+        'timeframe': os.getenv('TIMEFRAME', '1d').strip(),
         'limit': int(os.getenv('LIMIT', '1000')),
+        'since': parse_since(os.getenv('SINCE')),
     }
 
 
-def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '15m', limit: int = 500, filename: str = None):
+def fetch_ohlcv_all(exchange, symbol: str, timeframe: str, since_ms: int, limit: int = 1000):
+    timeframe_ms = exchange.parse_timeframe(timeframe) * 1000
+    all_ohlcv = []
+    now = exchange.milliseconds()
+    current_since = since_ms
+
+    while current_since < now:
+        start_dt = datetime.fromtimestamp(current_since / 1000, tz=timezone.utc)
+        print(f'  Descargando batch desde {start_dt:%Y-%m-%dT%H:%M:%SZ}')
+        batch = exchange.fetch_ohlcv(symbol, timeframe=timeframe, since=current_since, limit=limit)
+        if not batch:
+            break
+
+        if all_ohlcv and batch[0][0] <= all_ohlcv[-1][0]:
+            break
+
+        all_ohlcv.extend(batch)
+        last_ts = batch[-1][0]
+        if last_ts == current_since:
+            break
+
+        current_since = last_ts + timeframe_ms
+        if len(batch) < limit:
+            break
+
+    return all_ohlcv
+
+
+def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '1d', limit: int = 500, since_ms: int | None = None, filename: str = None):
     """Fetch OHLCV data for a symbol from a public exchange and save it to CSV."""
     exchange_cls = getattr(ccxt, exchange_name, None)
     if exchange_cls is None:
@@ -34,7 +77,13 @@ def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '15m', 
     })
 
     print(f"Conectando a {exchange_name} para {symbol} en timeframe {timeframe}...")
-    ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+    if since_ms is not None:
+        ohlcv = fetch_ohlcv_all(exchange, symbol, timeframe, since_ms, limit=limit)
+    else:
+        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+
+    if not ohlcv:
+        raise ValueError(f'No se obtuvieron datos para {symbol} en {exchange_name}.')
 
     df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
     df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
@@ -42,7 +91,8 @@ def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '15m', 
 
     if filename is None:
         safe_symbol = symbol.replace('/', '_')
-        filename = f"{exchange_name}_{safe_symbol}_{timeframe}.csv"
+        since_suffix = '' if since_ms is None else f'_{datetime.fromtimestamp(since_ms / 1000, tz=timezone.utc):%Y%m%d}'
+        filename = f"{exchange_name}_{safe_symbol}_{timeframe}{since_suffix}.csv"
 
     df.to_csv(filename, index=False)
     print(f"Guardado: {filename} ({len(df)} filas)")
@@ -52,4 +102,10 @@ def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '15m', 
 if __name__ == '__main__':
     config = load_config()
     for symbol in config['symbols']:
-        fetch_ohlcv_to_csv(symbol, config['exchange'], timeframe=config['timeframe'], limit=config['limit'])
+        fetch_ohlcv_to_csv(
+            symbol,
+            config['exchange'],
+            timeframe=config['timeframe'],
+            limit=config['limit'],
+            since_ms=config['since'],
+        )

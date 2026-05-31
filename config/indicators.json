@@ -1,0 +1,55 @@
+{
+  "indicators": [
+    {
+      "id": "ema",
+      "name": "EMA",
+      "description": "Media movil exponencial. Uso comun en corto y mediano plazo.",
+      "default_source": "close",
+      "default_length": 40
+    },
+    {
+      "id": "sma",
+      "name": "SMA",
+      "description": "Media movil simple para tendencia base.",
+      "default_source": "close",
+      "default_length": 50
+    },
+    {
+      "id": "rsi",
+      "name": "RSI",
+      "description": "Indice de fuerza relativa para momentum.",
+      "default_source": "close",
+      "default_length": 14
+    },
+    {
+      "id": "macd",
+      "name": "MACD",
+      "description": "Cruce de medias para momentum y tendencia.",
+      "default_source": "close",
+      "fast_length": 12,
+      "slow_length": 26,
+      "signal_length": 9
+    },
+    {
+      "id": "bbands",
+      "name": "Bollinger Bands",
+      "description": "Bandas de volatilidad sobre una media movil.",
+      "default_source": "close",
+      "default_length": 20,
+      "std_multiplier": 2
+    },
+    {
+      "id": "atr",
+      "name": "ATR",
+      "description": "Rango verdadero promedio para volatilidad.",
+      "default_length": 14
+    },
+    {
+      "id": "roc",
+      "name": "ROC",
+      "description": "Rate of Change para impulso de precio.",
+      "default_source": "close",
+      "default_length": 12
+    }
+  ]
+}

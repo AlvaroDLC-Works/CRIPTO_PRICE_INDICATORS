@@ -5,6 +5,11 @@ from pathlib import Path
 
 import pandas as pd
 
+try:
+    from Indicacdores import apply_indicator, get_indicator, load_indicators
+except ImportError:
+    from scripts.Indicacdores import apply_indicator, get_indicator, load_indicators
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DATA_DIR = PROJECT_ROOT / 'data' / 'raw'
@@ -12,7 +17,9 @@ ANALYSIS_DATA_DIR = PROJECT_ROOT / 'data' / 'analysis'
 STRATEGIES_PATH = PROJECT_ROOT / 'config' / 'analysis_strategies.json'
 DEFAULT_STRATEGY = {
     'name': 'EMA40 Close Cross',
-    'type': 'ema40',
+    'indicator_id': 'ema',
+    'source': 'close',
+    'length': 40,
 }
 
 
@@ -110,33 +117,65 @@ def select_base_file() -> Path | None:
 
 def create_strategy() -> None:
     strategies = load_strategies()
+    indicators = load_indicators()
 
     print('\n=== Crear estrategia ===')
-    print('Tipo disponible actualmente: ema40')
+    print('Indicadores disponibles:')
+    for index, indicator in enumerate(indicators, start=1):
+        default_source = indicator.get('default_source', 'ohlc')
+        default_length = indicator.get('default_length', 'n/a')
+        print(f'{index}) {indicator["name"]} [{indicator["id"]}] source={default_source} length={default_length}')
+
     name_value = prompt_input('Nombre de estrategia (Enter para EMA40 Close Cross): ')
     if name_value is None:
         return
-    type_value = prompt_input('Tipo de estrategia (Enter para ema40): ')
-    if type_value is None:
+    indicator_choice = prompt_input('Selecciona indicador [1-{}] (Enter para EMA): '.format(len(indicators)))
+    if indicator_choice is None:
         return
 
     name = name_value or DEFAULT_STRATEGY['name']
-    strategy_type = type_value.lower() or DEFAULT_STRATEGY['type']
+    if not indicator_choice:
+        indicator = get_indicator(DEFAULT_STRATEGY['indicator_id'])
+    elif indicator_choice.isdigit() and 1 <= int(indicator_choice) <= len(indicators):
+        indicator = indicators[int(indicator_choice) - 1]
+    else:
+        print('Opcion no valida.')
+        return
 
-    if strategy_type != 'ema40':
-        print('Tipo no soportado por ahora. Se usara ema40.')
-        strategy_type = 'ema40'
+    source = indicator.get('default_source', 'close')
+    if indicator['id'] != 'atr':
+        source_value = prompt_input(f'Source (Enter para {source}): ')
+        if source_value is None:
+            return
+        source = source_value or source
+
+    length = indicator.get('default_length')
+    length_value = None
+    if length is not None:
+        length_value = prompt_input(f'Length (Enter para {length}): ')
+        if length_value is None:
+            return
+        length = int(length_value or length)
 
     if any(strategy['name'].lower() == name.lower() for strategy in strategies):
         print('Ya existe una estrategia con ese nombre.')
         return
 
-    strategies.append({
+    strategy = {
         'name': name,
-        'type': strategy_type,
-    })
+        'indicator_id': indicator['id'],
+    }
+    if indicator['id'] != 'atr':
+        strategy['source'] = source
+    if length is not None:
+        strategy['length'] = length
+    for key in ['fast_length', 'slow_length', 'signal_length', 'std_multiplier']:
+        if key in indicator:
+            strategy[key] = indicator[key]
+
+    strategies.append(strategy)
     save_strategies(strategies)
-    print(f'Estrategia creada: {name} ({strategy_type})')
+    print(f'Estrategia creada: {name} ({indicator["id"]})')
 
 
 def select_strategy() -> dict[str, str] | None:
@@ -144,7 +183,8 @@ def select_strategy() -> dict[str, str] | None:
 
     print('\n=== Estrategias disponibles ===')
     for index, strategy in enumerate(strategies, start=1):
-        print(f'{index}) {strategy["name"]} [{strategy["type"]}]')
+        indicator_id = strategy.get('indicator_id', strategy.get('type', 'ema40'))
+        print(f'{index}) {strategy["name"]} [{indicator_id}]')
 
     choice = prompt_input('Selecciona estrategia [1-{}]: '.format(len(strategies)))
     if choice is None:
@@ -157,18 +197,23 @@ def select_strategy() -> dict[str, str] | None:
 
 
 def apply_strategy_to_dataframe(df: pd.DataFrame, strategy: dict[str, str]) -> pd.DataFrame:
-    strategy_type = strategy.get('type', 'ema40')
-    if strategy_type != 'ema40':
-        raise ValueError(f'Tipo de estrategia no soportado: {strategy_type}')
+    if 'indicator_id' not in strategy and strategy.get('type') == 'ema40':
+        strategy = {
+            **strategy,
+            'indicator_id': 'ema',
+            'source': 'close',
+            'length': 40,
+        }
 
-    result = add_ema40(df)
+    result, calculated_columns = apply_indicator(df, strategy)
     result['strategy_name'] = strategy['name']
 
     ordered_columns = list(df.columns)
     if 'strategy_name' not in ordered_columns:
         ordered_columns.append('strategy_name')
-    if 'ema_40' not in ordered_columns:
-        ordered_columns.append('ema_40')
+    for column in calculated_columns:
+        if column not in ordered_columns:
+            ordered_columns.append(column)
 
     return result[ordered_columns]
 
@@ -240,7 +285,7 @@ def analysis_menu() -> None:
         elif choice == '3':
             output_path = apply_strategy(current_file)
             if output_path is not None:
-                print('Columnas agregadas: strategy_name, ema_40')
+                print('Columnas agregadas: strategy_name y columnas calculadas por la estrategia.')
         elif choice == '4':
             break
         else:

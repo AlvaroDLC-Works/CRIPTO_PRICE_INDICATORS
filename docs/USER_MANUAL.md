@@ -84,7 +84,7 @@ Opciones disponibles:
 El submenu `Analisis` permite:
 
 - Cargar un archivo base desde `data/raw/`.
-- Crear una estrategia. Actualmente el tipo soportado es `ema40`.
+- Crear una estrategia eligiendo un indicador desde `config/indicators.json`.
 - Aplicar una estrategia y guardar un CSV en `data/analysis/` con columnas como `strategy_name` y `ema_40`.
 
 El menu `Herramientas` permite:

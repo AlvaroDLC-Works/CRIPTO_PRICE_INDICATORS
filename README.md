@@ -109,13 +109,23 @@ La opcion `Analisis` del menu principal abre un submenu:
 ```
 
 - `Cargar Archivos Base`: permite seleccionar un CSV desde `data/raw/`. Si no eliges uno, se usa por defecto el ultimo archivo generado.
-- `Crear estrategia`: registra una estrategia en `config/analysis_strategies.json`. Actualmente el tipo soportado es `ema40`.
+- `Crear estrategia`: lista indicadores desde `config/indicators.json` y registra una estrategia en `config/analysis_strategies.json`.
 - `Aplicar estrategia`: permite elegir una estrategia creada y genera un nuevo CSV en `data/analysis/`.
 
 El CSV de analisis conserva los datos base y agrega columnas de resultado, por ejemplo:
 
 - `strategy_name`: nombre de la estrategia aplicada.
 - `ema_40`: media movil exponencial de 40 periodos calculada sobre `close`.
+
+Los indicadores iniciales disponibles son:
+
+- `ema(source, length)`: media movil exponencial.
+- `sma(source, length)`: media movil simple.
+- `rsi(source, length)`: indice de fuerza relativa.
+- `macd(source, fast_length, slow_length, signal_length)`: momentum por cruce de medias.
+- `bbands(source, length, std_multiplier)`: bandas de Bollinger.
+- `atr(length)`: volatilidad por rango verdadero promedio.
+- `roc(source, length)`: tasa de cambio.
 
 ## Nombre de archivos CSV
 
@@ -143,8 +153,10 @@ El codigo usa `enableRateLimit=True` en `ccxt` y reintentos con backoff para evi
 ## Estructura
 
 - `config/`: definicion de campos editables para el menu de configuracion.
+- `config/indicators.json`: catalogo de indicadores disponibles para crear estrategias.
 - `data/raw/`: archivos CSV generados por las descargas.
 - `data/analysis/`: archivos CSV generados por estrategias de analisis.
 - `docs/`: documentacion extendida.
-- `scripts/`: scripts de instalacion, descarga y configuracion.
+- `scripts/`: scripts de instalacion, descarga, configuracion y analisis.
+- `scripts/Indicacdores.py`: funciones Python para calcular indicadores tecnicos.
 - `CriptoPriceStart.ps1`: instalador y lanzador principal para Windows.

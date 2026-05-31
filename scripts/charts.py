@@ -8,6 +8,11 @@ from pathlib import Path
 
 import pandas as pd
 
+try:
+    from console_style import header
+except ImportError:
+    from scripts.console_style import header
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / 'data'
@@ -40,7 +45,7 @@ def select_csv_file() -> Path | None:
         return None
 
     print(build_charts_dashboard())
-    print('\n=== Archivos CSV disponibles ===')
+    print('\n' + header('=== Archivos CSV disponibles ===', 'files'))
     for index, file_path in enumerate(files, start=1):
         default_marker = ' (ultimo generado)' if index == 1 else ''
         print(f'{index}) {file_path.relative_to(PROJECT_ROOT)}{default_marker}')
@@ -122,7 +127,7 @@ def build_charts_dashboard() -> str:
     analysis_count = len(list(ANALYSIS_DATA_DIR.glob('*.csv'))) if ANALYSIS_DATA_DIR.exists() else 0
     latest = list_csv_files()[0].relative_to(PROJECT_ROOT) if list_csv_files() else 'sin CSV'
     return (
-        '\n--- Estado actual de graficos ---\n'
+        '\n' + header('--- Estado actual de graficos ---', 'status') + '\n'
         f'CSV raw: {raw_count}\n'
         f'CSV analysis: {analysis_count}\n'
         f'Archivo por defecto: {latest}\n'
@@ -413,7 +418,7 @@ def build_dxf_content(df: pd.DataFrame, columns: list[str], use_polyline: bool) 
 
 def show_menu() -> None:
     print(build_charts_dashboard())
-    print('\n=== Graficos ===')
+    print('\n' + header('=== Graficos ===', 'charts'))
     print('1) Ver en pantalla')
     print('2) Exportar grafico en PDF horizontal')
     print('3) Exportar grafico en CAD/DXF')

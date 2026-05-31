@@ -2,6 +2,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from scripts.console_style import header
+
 PROJECT_ROOT = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_ROOT / 'config' / '.env'
 RAW_DATA_DIR = PROJECT_ROOT / 'data' / 'raw'
@@ -29,7 +31,7 @@ def prompt_input(prompt: str) -> str | None:
 
 def show_menu() -> None:
     print(build_download_dashboard())
-    print('\n=== CriptoPrice Menu ===')
+    print('\n' + header('=== CriptoPrice Menu ===', 'main'))
     print('1) Configurar Descarga (config/.env)')
     print('2) Descargar Datos (fetch_crypto_data)')
     print('3) Analisis de Datos')
@@ -40,7 +42,7 @@ def show_menu() -> None:
 
 def show_tools_menu() -> None:
     print(build_download_dashboard())
-    print('\n=== Herramientas ===')
+    print('\n' + header('=== Herramientas ===', 'tools'))
     print('1) Verificar / reparar ambiente (install)')
     print('2) Regenerar config/env_config_fields.json')
     print('3) Limpiar CSV con backup')
@@ -95,7 +97,7 @@ def build_download_dashboard() -> str:
     base_assets = ', '.join(base_symbols)
 
     return (
-        '\n--- Estado actual de descarga ---\n'
+        '\n' + header('--- Estado actual de descarga ---', 'status') + '\n'
         f'Exchange: {exchange}\n'
         f'Fallback exchanges: {fallback_exchanges}\n'
         f'Activos base: {base_assets}\n'

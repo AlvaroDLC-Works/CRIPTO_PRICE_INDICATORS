@@ -4,9 +4,11 @@ from pathlib import Path
 import pandas as pd
 
 try:
+    from console_style import header
     from Indicacdores import apply_indicator, get_indicator, load_indicators
     from csv_file_logger import build_download_dashboard, build_unique_csv_path, log_csv_file
 except ImportError:
+    from scripts.console_style import header
     from scripts.Indicacdores import apply_indicator, get_indicator, load_indicators
     from scripts.csv_file_logger import build_download_dashboard, build_unique_csv_path, log_csv_file
 
@@ -131,7 +133,7 @@ def read_env_values() -> dict[str, str]:
 
 def build_signal_systems_dashboard(signal_systems: list[dict]) -> str:
     return (
-        '\n--- Estado sistemas de senales ---\n'
+        '\n' + header('--- Estado sistemas de senales ---', 'status') + '\n'
         f'Sistemas guardados: {len(signal_systems)}\n'
         f'Archivo de sistemas: {SIGNAL_SYSTEMS_PATH.relative_to(PROJECT_ROOT)}'
     )
@@ -143,7 +145,7 @@ def select_base_file() -> Path | None:
         print('No hay archivos base en data/raw/. Ejecuta primero la opcion 2 del menu principal.')
         return None
 
-    print('\n=== Archivos base disponibles ===')
+    print('\n' + header('=== Archivos base disponibles ===', 'files'))
     for index, file_path in enumerate(files, start=1):
         default_marker = ' (ultimo generado)' if index == 1 else ''
         print(f'{index}) {file_path.name}{default_marker}')
@@ -171,7 +173,7 @@ def print_indicators(indicators: list[dict]) -> None:
 
 
 def build_indicator_config(indicators: list[dict], default_indicator_id: str = 'ema') -> dict | None:
-    print('\n--- Estado catalogo de indicadores ---')
+    print('\n' + header('--- Estado catalogo de indicadores ---', 'indicators'))
     print(f'Indicadores disponibles: {len(indicators)}')
     print('Archivo de indicadores: config/indicators.json')
 
@@ -219,7 +221,7 @@ def create_signal_system() -> None:
     signal_systems = load_signal_systems()
     indicators = load_indicators()
 
-    print('\n=== Crear Sistema de senales ===')
+    print('\n' + header('=== Crear Sistema de senales ===', 'signals'))
     name_value = prompt_input('Nombre del sistema de senales (Enter para EMA40 Close Cross): ')
     if name_value is None:
         return
@@ -259,7 +261,7 @@ def select_signal_system() -> dict[str, str] | None:
         return None
 
     print(build_signal_systems_dashboard(signal_systems))
-    print('\n=== Sistemas de senales disponibles ===')
+    print('\n' + header('=== Sistemas de senales disponibles ===', 'signals'))
     for index, signal_system in enumerate(signal_systems, start=1):
         indicator_ids = ', '.join(indicator.get('indicator_id', indicator.get('type', 'ema')) for indicator in signal_system['indicators'])
         print(f'{index}) {signal_system["name"]} [{indicator_ids}]')
@@ -302,7 +304,7 @@ def delete_signal_system() -> None:
         return
 
     print(build_signal_systems_dashboard(signal_systems))
-    print('\n=== Eliminar Sistema de senales ===')
+    print('\n' + header('=== Eliminar Sistema de senales ===', 'signals'))
     for index, signal_system in enumerate(signal_systems, start=1):
         print(f'{index}) {signal_system["name"]}')
     print('A) Atras')
@@ -361,13 +363,18 @@ def apply_signal_system(base_file: Path | None = None) -> Path | None:
 
 def show_analysis_menu(current_file: Path | None) -> None:
     selected_name = current_file.name if current_file else 'ultimo archivo generado por defecto'
+    download_dashboard = build_download_dashboard(read_env_values()).replace(
+        '--- Estado actual de descarga ---',
+        header('--- Estado actual de descarga ---', 'status'),
+        1,
+    )
     dashboard = (
-        f'{build_download_dashboard(read_env_values())}\n'
+        f'{download_dashboard}\n'
         f'Archivo base actual para analisis: {selected_name}\n'
         f'Sistemas de senales guardados: {len(load_signal_systems())}'
     )
     print(f'\n{dashboard}')
-    print('\n=== Analisis ===')
+    print('\n' + header('=== Analisis ===', 'analysis'))
     print('1) Cargar Archivos Base')
     print('2) Crear Sistema de senales')
     print('3) Aplicar Sistema de senales')

@@ -1,6 +1,11 @@
 import json
 from pathlib import Path
 
+try:
+    from console_style import header
+except ImportError:
+    from scripts.console_style import header
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TARGET_PATH = PROJECT_ROOT / 'config' / '.env'
@@ -65,7 +70,7 @@ def build_download_dashboard(values: dict[str, str]) -> str:
     pairs = ', '.join(f'{symbol}/USDT' for symbol in base_symbols)
 
     return (
-        '\n--- Estado actual de descarga ---\n'
+        '\n' + header('--- Estado actual de descarga ---', 'status') + '\n'
         f'Exchange: {values.get("EXCHANGE", "binance")}\n'
         f'Fallback exchanges: {values.get("FALLBACK_EXCHANGES", "bybit,okx,kucoin")}\n'
         f'Activos base: {base_assets}\n'
@@ -115,7 +120,7 @@ def select_field(target_path: Path, fields: list[dict[str, str]]) -> dict[str, s
         values = get_key_value_data(lines, fields)
 
         print(build_download_dashboard(values))
-        print(f'\n=== Editar configuracion {display_path} ===')
+        print('\n' + header(f'=== Editar configuracion {display_path} ===', 'config'))
         for index, field in enumerate(fields, start=1):
             key = field['key']
             print(f'{index}) {key} = {values[key]}')

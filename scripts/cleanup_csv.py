@@ -2,6 +2,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
+try:
+    from console_style import header
+except ImportError:
+    from scripts.console_style import header
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / 'data'
@@ -41,7 +46,7 @@ def build_cleanup_dashboard() -> str:
         for pattern in TARGET_PATTERNS['charts']
     ) if TARGET_DIRS['charts'].exists() else 0
     return (
-        '\n--- Estado actual de archivos data ---\n'
+        '\n' + header('--- Estado actual de archivos data ---', 'status') + '\n'
         f'CSV en data/raw: {raw_count}\n'
         f'CSV en data/analysis: {analysis_count}\n'
         f'Graficos en data/charts: {charts_count}\n'
@@ -86,7 +91,7 @@ def backup_and_clean(target_names: list[str], backup_type: str) -> Path | None:
 
 def show_menu() -> None:
     print(build_cleanup_dashboard())
-    print('\n=== Limpieza Data ===')
+    print('\n' + header('=== Limpieza Data ===', 'cleanup'))
     print('1) Limpiar data/raw')
     print('2) Limpiar data/analysis')
     print('3) Limpiar data/charts')

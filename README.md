@@ -6,6 +6,9 @@ Proyecto para descargar datos historicos de criptoactivos y generar archivos CSV
 
 ```powershell
 .\CriptoPriceStart.bat (Explorer - Doble Clic)
+```
+
+```powershell
 .\CriptoPriceStart.ps1 (PowerShell - Command Line)
 ```
 

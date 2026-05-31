@@ -77,14 +77,15 @@ El menu `Herramientas` permite ejecutar utilidades de mantenimiento:
 
 - Verificar o reparar el ambiente con `scripts/install.py`.
 - Regenerar `config/env_config_fields.json` desde `config/.env`.
-- Limpiar CSV de `data/raw/`, `data/analysis/` o ambos, creando antes un `.zip` en `backup/`.
+- Limpiar CSV de `data/raw/`, CSV de `data/analysis/` y graficos de `data/charts/`, creando antes un `.zip` en `backup/`.
 - Acortar nombres de CSV existentes en `data/raw/` y `data/analysis/`.
 
-La herramienta de limpieza conserva la estructura dentro del `.zip`, por ejemplo `data/raw/...csv` y `data/analysis/...csv`. Los nombres de backup son cortos:
+La herramienta de limpieza conserva la estructura dentro del `.zip`, por ejemplo `data/raw/...csv`, `data/analysis/...csv` y `data/charts/...dxf`. Los nombres de backup son cortos:
 
 ```text
 raw260531121500.zip
 analysis260531121500.zip
+charts260531121500.zip
 todos260531121500.zip
 ```
 

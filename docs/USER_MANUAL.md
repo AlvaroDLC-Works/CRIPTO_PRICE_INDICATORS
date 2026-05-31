@@ -98,7 +98,7 @@ El menu `Herramientas` permite:
 
 - Verificar o reparar el ambiente con `scripts/install.py`.
 - Regenerar `config/env_config_fields.json` desde `config/.env`.
-- Limpiar CSV de `data/raw/`, `data/analysis/` o ambos, generando un backup `.zip` antes de borrar.
+- Limpiar CSV de `data/raw/`, CSV de `data/analysis/` y graficos de `data/charts/`, generando un backup `.zip` antes de borrar.
 - Acortar nombres de CSV existentes y registrar el cambio en `data/csv_files_log.txt`.
 
 El submenu `Graficos` permite:

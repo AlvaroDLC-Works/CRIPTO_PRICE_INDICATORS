@@ -103,8 +103,8 @@ El menu `Herramientas` permite:
 
 El submenu `Graficos` permite:
 
-- Ver un grafico de velas en pantalla desde un CSV.
-- Exportar el grafico de velas a PDF horizontal.
+- Ver un grafico de velas en pantalla desde un CSV, incluyendo columnas calculadas como `ema_40`.
+- Exportar el grafico de velas a PDF horizontal con columnas calculadas.
 - Exportar columnas numericas a CAD/DXF usando un layer por columna.
 
 ## 7. Descargar datos

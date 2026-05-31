@@ -1,5 +1,7 @@
 import html
+import json
 import math
+import random
 import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +14,7 @@ DATA_DIR = PROJECT_ROOT / 'data'
 RAW_DATA_DIR = DATA_DIR / 'raw'
 ANALYSIS_DATA_DIR = DATA_DIR / 'analysis'
 CHARTS_DIR = DATA_DIR / 'charts'
+OHLC_COLUMNS = {'open', 'high', 'low', 'close'}
 
 
 def prompt_input(prompt: str) -> str | None:
@@ -79,6 +82,41 @@ def read_chart_data(csv_path: Path) -> pd.DataFrame:
     return df.dropna(subset=['datetime', 'open', 'high', 'low', 'close'])
 
 
+def prompt_render_mode(context: str) -> bool | None:
+    choice = prompt_input(f'Modo {context}: 1) Polilinea/linea  2) Solo puntos X [1/2]: ')
+    if choice is None:
+        return None
+    return choice != '2'
+
+
+def random_hex_color() -> str:
+    return '#{:02x}{:02x}{:02x}'.format(
+        random.randint(40, 235),
+        random.randint(40, 235),
+        random.randint(40, 235),
+    )
+
+
+def hex_to_pdf_rgb(hex_color: str) -> tuple[float, float, float]:
+    return (
+        int(hex_color[1:3], 16) / 255,
+        int(hex_color[3:5], 16) / 255,
+        int(hex_color[5:7], 16) / 255,
+    )
+
+
+def analysis_numeric_columns(df: pd.DataFrame) -> list[str]:
+    excluded = OHLC_COLUMNS | {'timestamp', 'datetime', 'volume'}
+    columns = []
+    for column in df.columns:
+        if column in excluded:
+            continue
+        numeric = pd.to_numeric(df[column], errors='coerce')
+        if numeric.notna().any():
+            columns.append(column)
+    return columns
+
+
 def build_charts_dashboard() -> str:
     raw_count = len(list(RAW_DATA_DIR.glob('*.csv'))) if RAW_DATA_DIR.exists() else 0
     analysis_count = len(list(ANALYSIS_DATA_DIR.glob('*.csv'))) if ANALYSIS_DATA_DIR.exists() else 0
@@ -92,10 +130,30 @@ def build_charts_dashboard() -> str:
     )
 
 
-def make_plotly_html(csv_path: Path, df: pd.DataFrame) -> Path:
+def make_plotly_html(csv_path: Path, df: pd.DataFrame, use_polyline: bool) -> Path:
     output_path = build_output_path('html', 'chart')
     title = html.escape(csv_path.name)
     dates = [value.isoformat() for value in df['datetime']]
+    indicator_traces = []
+    for column in analysis_numeric_columns(df):
+        series = pd.to_numeric(df[column], errors='coerce')
+        values = [None if pd.isna(value) else float(value) for value in series]
+        color = random_hex_color()
+        trace = {
+            'x': dates,
+            'y': values,
+            'type': 'scatter',
+            'mode': 'lines+markers' if use_polyline else 'markers',
+            'name': column,
+            'line': {'color': color, 'width': 2},
+            'marker': {
+                'color': color,
+                'size': 6,
+                'symbol': 'circle' if use_polyline else 'x',
+            },
+            'connectgaps': False,
+        }
+        indicator_traces.append(trace)
 
     html_content = f"""<!doctype html>
 <html lang="es">
@@ -111,16 +169,18 @@ def make_plotly_html(csv_path: Path, df: pd.DataFrame) -> Path:
   <div id="chart"></div>
   <script>
     const trace = {{
-      x: {dates},
-      open: {df['open'].tolist()},
-      high: {df['high'].tolist()},
-      low: {df['low'].tolist()},
-      close: {df['close'].tolist()},
+      x: {json.dumps(dates)},
+      open: {json.dumps(df['open'].tolist())},
+      high: {json.dumps(df['high'].tolist())},
+      low: {json.dumps(df['low'].tolist())},
+      close: {json.dumps(df['close'].tolist())},
       type: 'candlestick',
+      name: 'OHLC',
       increasing: {{ line: {{ color: '#16a34a' }} }},
       decreasing: {{ line: {{ color: '#dc2626' }} }}
     }};
-    Plotly.newPlot('chart', [trace], {{
+    const indicatorTraces = {json.dumps(indicator_traces)};
+    Plotly.newPlot('chart', [trace, ...indicatorTraces], {{
       title: {title!r},
       paper_bgcolor: '#111827',
       plot_bgcolor: '#111827',
@@ -143,7 +203,11 @@ def open_chart_on_screen() -> None:
         return
 
     df = read_chart_data(csv_path)
-    output_path = make_plotly_html(csv_path, df)
+    use_polyline = prompt_render_mode('pantalla')
+    if use_polyline is None:
+        return
+
+    output_path = make_plotly_html(csv_path, df, use_polyline)
     print(f'Grafico HTML creado: {output_path}')
     webbrowser.open(output_path.resolve().as_uri())
 
@@ -188,19 +252,27 @@ def export_pdf_chart() -> None:
         return
 
     df = read_chart_data(csv_path).tail(180)
+    use_polyline = prompt_render_mode('PDF')
+    if use_polyline is None:
+        return
+
     output_path = build_output_path('pdf', 'chart')
-    commands = build_candlestick_pdf_commands(csv_path.name, df)
+    commands = build_candlestick_pdf_commands(csv_path.name, df, use_polyline)
     write_pdf(output_path, csv_path.name, commands)
     print(f'PDF horizontal creado: {output_path}')
 
 
-def build_candlestick_pdf_commands(title: str, df: pd.DataFrame) -> list[str]:
+def build_candlestick_pdf_commands(title: str, df: pd.DataFrame, use_polyline: bool) -> list[str]:
     width, height = 842, 595
     left, right, bottom, top = 60, 30, 55, 55
     chart_width = width - left - right
     chart_height = height - bottom - top
-    price_min = float(df['low'].min())
-    price_max = float(df['high'].max())
+    y_columns = ['low', 'high', *analysis_numeric_columns(df)]
+    y_values = []
+    for column in y_columns:
+        y_values.extend(pd.to_numeric(df[column], errors='coerce').dropna().tolist())
+    price_min = float(min(y_values))
+    price_max = float(max(y_values))
     if math.isclose(price_min, price_max):
         price_max = price_min + 1
 
@@ -236,6 +308,32 @@ def build_candlestick_pdf_commands(title: str, df: pd.DataFrame) -> list[str]:
         body_y = min(open_y, close_y)
         body_h = max(abs(close_y - open_y), 1)
         commands.append(f'{x - candle_width / 2:.2f} {body_y:.2f} {candle_width:.2f} {body_h:.2f} re f')
+
+    legend_y = 545
+    for column in analysis_numeric_columns(df):
+        color = random_hex_color()
+        r, g, b = hex_to_pdf_rgb(color)
+        commands.append(f'{r:.3f} {g:.3f} {b:.3f} RG {r:.3f} {g:.3f} {b:.3f} rg')
+        points = []
+        series = pd.to_numeric(df[column], errors='coerce')
+        for index, value in enumerate(series):
+            if pd.notna(value):
+                points.append((x_at(index), y_at(float(value))))
+
+        if use_polyline and len(points) > 1:
+            first_x, first_y = points[0]
+            path_parts = [f'{first_x:.2f} {first_y:.2f} m']
+            path_parts.extend(f'{x:.2f} {y:.2f} l' for x, y in points[1:])
+            commands.append(' '.join(path_parts) + ' S')
+            for x, y in points:
+                commands.append(f'{x - 1.2:.2f} {y - 1.2:.2f} 2.4 2.4 re f')
+        else:
+            for x, y in points:
+                commands.append(f'{x - 3:.2f} {y - 3:.2f} m {x + 3:.2f} {y + 3:.2f} l S')
+                commands.append(f'{x - 3:.2f} {y + 3:.2f} m {x + 3:.2f} {y - 3:.2f} l S')
+
+        commands.append(f'BT /F1 8 Tf 650 {legend_y} Td ({pdf_escape(column)}) Tj ET')
+        legend_y -= 12
 
     return commands
 
@@ -286,9 +384,10 @@ def export_dxf_chart() -> None:
 
 def build_dxf_content(df: pd.DataFrame, columns: list[str], use_polyline: bool) -> str:
     layer_names = [sanitize_layer_name(column) for column in columns]
+    layer_colors = {layer: random.randint(1, 255) for layer in layer_names}
     parts = ['0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n']
     for layer in layer_names:
-        parts.append(f'0\nLAYER\n2\n{layer}\n70\n0\n62\n7\n6\nCONTINUOUS\n')
+        parts.append(f'0\nLAYER\n2\n{layer}\n70\n0\n62\n{layer_colors[layer]}\n6\nCONTINUOUS\n')
     parts.append('0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n')
 
     x_spacing = 10.0
@@ -297,16 +396,16 @@ def build_dxf_content(df: pd.DataFrame, columns: list[str], use_polyline: bool) 
         series = pd.to_numeric(df[column], errors='coerce')
         points = [(index * x_spacing, float(value)) for index, value in enumerate(series) if pd.notna(value)]
         if use_polyline and points:
-            parts.append(f'0\nLWPOLYLINE\n8\n{layer}\n90\n{len(points)}\n70\n0\n')
+            parts.append(f'0\nLWPOLYLINE\n8\n{layer}\n62\n{layer_colors[layer]}\n90\n{len(points)}\n70\n0\n')
             for x, y in points:
                 parts.append(dxf_pair(10, f'{x:.6f}'))
                 parts.append(dxf_pair(20, f'{y:.6f}'))
             for x, y in points:
-                parts.append(f'0\nPOINT\n8\n{layer}\n10\n{x:.6f}\n20\n{y:.6f}\n30\n0\n')
+                parts.append(f'0\nPOINT\n8\n{layer}\n62\n{layer_colors[layer]}\n10\n{x:.6f}\n20\n{y:.6f}\n30\n0\n')
         else:
             for x, y in points:
-                parts.append(f'0\nLINE\n8\n{layer}\n10\n{x - cross_size:.6f}\n20\n{y - cross_size:.6f}\n30\n0\n11\n{x + cross_size:.6f}\n21\n{y + cross_size:.6f}\n31\n0\n')
-                parts.append(f'0\nLINE\n8\n{layer}\n10\n{x - cross_size:.6f}\n20\n{y + cross_size:.6f}\n30\n0\n11\n{x + cross_size:.6f}\n21\n{y - cross_size:.6f}\n31\n0\n')
+                parts.append(f'0\nLINE\n8\n{layer}\n62\n{layer_colors[layer]}\n10\n{x - cross_size:.6f}\n20\n{y - cross_size:.6f}\n30\n0\n11\n{x + cross_size:.6f}\n21\n{y + cross_size:.6f}\n31\n0\n')
+                parts.append(f'0\nLINE\n8\n{layer}\n62\n{layer_colors[layer]}\n10\n{x - cross_size:.6f}\n20\n{y + cross_size:.6f}\n30\n0\n11\n{x + cross_size:.6f}\n21\n{y - cross_size:.6f}\n31\n0\n')
 
     parts.append('0\nENDSEC\n0\nEOF\n')
     return ''.join(parts)

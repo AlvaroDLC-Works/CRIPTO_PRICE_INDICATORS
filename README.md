@@ -162,11 +162,11 @@ La opcion `Graficos` del menu principal permite trabajar con CSV de `data/raw/` 
 4) Volver al menu principal
 ```
 
-- `Ver en pantalla`: genera un HTML con velas OHLC estilo TradingView y lo abre en el navegador.
-- `Exportar grafico en PDF horizontal`: crea un PDF en formato horizontal con velas OHLC.
+- `Ver en pantalla`: genera un HTML con velas OHLC estilo TradingView y superpone columnas calculadas como `ema_40`.
+- `Exportar grafico en PDF horizontal`: crea un PDF en formato horizontal con velas OHLC y columnas calculadas.
 - `Exportar grafico en CAD/DXF`: exporta columnas numericas a DXF usando un layer por columna.
 
-En DXF, el eje X representa el orden temporal de los datos y el eje Y el valor de cada columna. Puedes elegir entre polilineas con puntos o solo puntos marcados con `X`.
+En pantalla, PDF y DXF puedes elegir entre linea/polilinea o solo puntos. En modo puntos se usa una `X`; en modo linea, cada columna calculada usa un color aleatorio y une sus valores siguiendo el eje X.
 
 ## Nombre de archivos CSV
 

@@ -88,9 +88,34 @@ py scripts/fetch_crypto_data.py
 ```
 
 Esto descarga datos OHLCV para los simbolos configurados y genera un CSV por simbolo en `data/raw/`.
+Ese archivo es la base limpia para analisis, por ejemplo:
+
+```text
+binanceBTC1w260301260531004807.csv
+```
 
 Los simbolos se configuran como monedas base. La moneda de intercambio se asume siempre como `USDT`.
 Si el exchange principal falla, el script intenta los exchanges definidos en `FALLBACK_EXCHANGES` en orden.
+
+## Analisis
+
+La opcion `Analisis` del menu principal abre un submenu:
+
+```text
+1) Cargar Archivos Base
+2) Crear estrategia
+3) Aplicar estrategia
+4) Volver al menu principal
+```
+
+- `Cargar Archivos Base`: permite seleccionar un CSV desde `data/raw/`. Si no eliges uno, se usa por defecto el ultimo archivo generado.
+- `Crear estrategia`: registra una estrategia en `config/analysis_strategies.json`. Actualmente el tipo soportado es `ema40`.
+- `Aplicar estrategia`: permite elegir una estrategia creada y genera un nuevo CSV en `data/analysis/`.
+
+El CSV de analisis conserva los datos base y agrega columnas de resultado, por ejemplo:
+
+- `strategy_name`: nombre de la estrategia aplicada.
+- `ema_40`: media movil exponencial de 40 periodos calculada sobre `close`.
 
 ## Nombre de archivos CSV
 
@@ -119,6 +144,7 @@ El codigo usa `enableRateLimit=True` en `ccxt` y reintentos con backoff para evi
 
 - `config/`: definicion de campos editables para el menu de configuracion.
 - `data/raw/`: archivos CSV generados por las descargas.
+- `data/analysis/`: archivos CSV generados por estrategias de analisis.
 - `docs/`: documentacion extendida.
 - `scripts/`: scripts de instalacion, descarga y configuracion.
 - `CriptoPriceStart.ps1`: instalador y lanzador principal para Windows.

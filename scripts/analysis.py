@@ -1,6 +1,254 @@
+import json
+import re
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pandas as pd
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+RAW_DATA_DIR = PROJECT_ROOT / 'data' / 'raw'
+ANALYSIS_DATA_DIR = PROJECT_ROOT / 'data' / 'analysis'
+STRATEGIES_PATH = PROJECT_ROOT / 'config' / 'analysis_strategies.json'
+DEFAULT_STRATEGY = {
+    'name': 'EMA40 Close Cross',
+    'type': 'ema40',
+}
+
+
+def add_ema40(
+    df: pd.DataFrame,
+    close_column: str = 'close',
+) -> pd.DataFrame:
+    if close_column not in df.columns:
+        raise ValueError(f'No existe la columna requerida: {close_column}')
+
+    result = df.copy()
+    close = pd.to_numeric(result[close_column], errors='coerce')
+    result['ema_40'] = close.ewm(span=40, adjust=False).mean()
+    return result
+
+
+def add_ema40_close_cross_signals(
+    df: pd.DataFrame,
+    close_column: str = 'close',
+    ema_period: int = 40,
+) -> pd.DataFrame:
+    """Add EMA and close/EMA cross signals equivalent to the PineScript logic."""
+    if close_column not in df.columns:
+        raise ValueError(f'No existe la columna requerida: {close_column}')
+
+    result = df.copy()
+    close = pd.to_numeric(result[close_column], errors='coerce')
+    ema_column = f'ema_{ema_period}'
+
+    result[ema_column] = close.ewm(span=ema_period, adjust=False).mean()
+
+    previous_close = close.shift(1)
+    previous_ema = result[ema_column].shift(1)
+
+    result['ema40XCloseOver'] = (previous_close <= previous_ema) & (close > result[ema_column])
+
+    crossunder = (previous_close >= previous_ema) & (close < result[ema_column])
+    previous_bar_crossover = (close.shift(2) <= result[ema_column].shift(2)) & (previous_close > previous_ema)
+    result['ema40XCloseUnder'] = crossunder & ~previous_bar_crossover.fillna(False)
+
+    return result
+
+
+def load_strategies() -> list[dict[str, str]]:
+    if not STRATEGIES_PATH.exists():
+        save_strategies([DEFAULT_STRATEGY])
+
+    data = json.loads(STRATEGIES_PATH.read_text(encoding='utf-8'))
+    strategies = data.get('strategies', [])
+    if not strategies:
+        strategies = [DEFAULT_STRATEGY]
+        save_strategies(strategies)
+    return strategies
+
+
+def save_strategies(strategies: list[dict[str, str]]) -> None:
+    STRATEGIES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    STRATEGIES_PATH.write_text(
+        json.dumps({'strategies': strategies}, indent=2, ensure_ascii=False) + '\n',
+        encoding='utf-8',
+    )
+
+
+def list_base_files() -> list[Path]:
+    if not RAW_DATA_DIR.exists():
+        return []
+    return sorted(RAW_DATA_DIR.glob('*.csv'), key=lambda path: path.stat().st_mtime, reverse=True)
+
+
+def select_base_file() -> Path | None:
+    files = list_base_files()
+    if not files:
+        print('No hay archivos base en data/raw/. Ejecuta primero la opcion 1 del menu principal.')
+        return None
+
+    print('\n=== Archivos base disponibles ===')
+    for index, file_path in enumerate(files, start=1):
+        default_marker = ' (ultimo generado)' if index == 1 else ''
+        print(f'{index}) {file_path.name}{default_marker}')
+
+    choice = prompt_input('Selecciona archivo base (Enter para usar el ultimo): ')
+    if choice is None:
+        return None
+    if not choice:
+        selected = files[0]
+    elif choice.isdigit() and 1 <= int(choice) <= len(files):
+        selected = files[int(choice) - 1]
+    else:
+        print('Opcion no valida.')
+        return None
+
+    print(f'Archivo base seleccionado: {selected.name}')
+    return selected
+
+
+def create_strategy() -> None:
+    strategies = load_strategies()
+
+    print('\n=== Crear estrategia ===')
+    print('Tipo disponible actualmente: ema40')
+    name_value = prompt_input('Nombre de estrategia (Enter para EMA40 Close Cross): ')
+    if name_value is None:
+        return
+    type_value = prompt_input('Tipo de estrategia (Enter para ema40): ')
+    if type_value is None:
+        return
+
+    name = name_value or DEFAULT_STRATEGY['name']
+    strategy_type = type_value.lower() or DEFAULT_STRATEGY['type']
+
+    if strategy_type != 'ema40':
+        print('Tipo no soportado por ahora. Se usara ema40.')
+        strategy_type = 'ema40'
+
+    if any(strategy['name'].lower() == name.lower() for strategy in strategies):
+        print('Ya existe una estrategia con ese nombre.')
+        return
+
+    strategies.append({
+        'name': name,
+        'type': strategy_type,
+    })
+    save_strategies(strategies)
+    print(f'Estrategia creada: {name} ({strategy_type})')
+
+
+def select_strategy() -> dict[str, str] | None:
+    strategies = load_strategies()
+
+    print('\n=== Estrategias disponibles ===')
+    for index, strategy in enumerate(strategies, start=1):
+        print(f'{index}) {strategy["name"]} [{strategy["type"]}]')
+
+    choice = prompt_input('Selecciona estrategia [1-{}]: '.format(len(strategies)))
+    if choice is None:
+        return None
+    if choice.isdigit() and 1 <= int(choice) <= len(strategies):
+        return strategies[int(choice) - 1]
+
+    print('Opcion no valida.')
+    return None
+
+
+def apply_strategy_to_dataframe(df: pd.DataFrame, strategy: dict[str, str]) -> pd.DataFrame:
+    strategy_type = strategy.get('type', 'ema40')
+    if strategy_type != 'ema40':
+        raise ValueError(f'Tipo de estrategia no soportado: {strategy_type}')
+
+    result = add_ema40(df)
+    result['strategy_name'] = strategy['name']
+
+    ordered_columns = list(df.columns)
+    if 'strategy_name' not in ordered_columns:
+        ordered_columns.append('strategy_name')
+    if 'ema_40' not in ordered_columns:
+        ordered_columns.append('ema_40')
+
+    return result[ordered_columns]
+
+
+def sanitize_filename_part(value: str) -> str:
+    cleaned = re.sub(r'[^A-Za-z0-9]+', '', value)
+    return cleaned or 'strategy'
+
+
+def build_analysis_filename(base_file: Path, strategy: dict[str, str]) -> Path:
+    timestamp = datetime.now(timezone.utc).strftime('%y%m%d%H%M%S')
+    strategy_code = sanitize_filename_part(strategy['name'])
+    return ANALYSIS_DATA_DIR / f'{base_file.stem}{strategy_code}{timestamp}.csv'
+
+
+def apply_strategy(base_file: Path | None = None) -> Path | None:
+    selected_base_file = base_file or select_base_file()
+    if selected_base_file is None:
+        return None
+
+    strategy = select_strategy()
+    if strategy is None:
+        return None
+
+    df = pd.read_csv(selected_base_file)
+    analyzed_df = apply_strategy_to_dataframe(df, strategy)
+
+    ANALYSIS_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = build_analysis_filename(selected_base_file, strategy)
+    analyzed_df.to_csv(output_path, index=False)
+
+    print(f'Analisis guardado: {output_path}')
+    return output_path
+
+
+def show_analysis_menu(current_file: Path | None) -> None:
+    selected_name = current_file.name if current_file else 'ultimo archivo generado por defecto'
+    print('\n=== Analisis ===')
+    print(f'Archivo base actual: {selected_name}')
+    print('1) Cargar Archivos Base')
+    print('2) Crear estrategia')
+    print('3) Aplicar estrategia')
+    print('4) Volver al menu principal')
+
+
+def prompt_input(prompt: str) -> str | None:
+    try:
+        return input(prompt).strip()
+    except EOFError:
+        print('\nEntrada finalizada. Volviendo al menu anterior.')
+        return None
+
+
+def analysis_menu() -> None:
+    current_file = list_base_files()[0] if list_base_files() else None
+
+    while True:
+        show_analysis_menu(current_file)
+        choice = prompt_input('Selecciona una opcion [1-4]: ')
+        if choice is None:
+            break
+
+        if choice == '1':
+            selected_file = select_base_file()
+            if selected_file is not None:
+                current_file = selected_file
+        elif choice == '2':
+            create_strategy()
+        elif choice == '3':
+            output_path = apply_strategy(current_file)
+            if output_path is not None:
+                print('Columnas agregadas: strategy_name, ema_40')
+        elif choice == '4':
+            break
+        else:
+            print('Opcion no valida. Intenta de nuevo.')
+
+
 def main() -> None:
-    print('Analisis en construccion .....')
-    print('Por ahora se omite el analisis y se conserva solo la data pura descargada.')
+    analysis_menu()
 
 
 if __name__ == '__main__':

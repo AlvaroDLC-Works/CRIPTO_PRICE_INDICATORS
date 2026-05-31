@@ -1,0 +1,8 @@
+{
+  "strategies": [
+    {
+      "name": "EMA40 Close Cross",
+      "type": "ema40"
+    }
+  ]
+}

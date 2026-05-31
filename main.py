@@ -18,6 +18,14 @@ def run_script(script_name: str) -> int:
     return result.returncode
 
 
+def prompt_input(prompt: str) -> str | None:
+    try:
+        return input(prompt).strip()
+    except EOFError:
+        print('\nEntrada finalizada. Volviendo/saliendo del menu actual.')
+        return None
+
+
 def show_menu() -> None:
     print('\n=== CriptoPrice Menu ===')
     print('1) Descargar datos (fetch_crypto_data)')
@@ -87,7 +95,9 @@ def build_download_dashboard() -> str:
 def tools_menu() -> None:
     while True:
         show_tools_menu()
-        choice = input('Selecciona una herramienta [1-3]: ').strip()
+        choice = prompt_input('Selecciona una herramienta [1-3]: ')
+        if choice is None:
+            break
 
         if choice == '1':
             run_script('scripts/install.py')
@@ -102,7 +112,9 @@ def tools_menu() -> None:
 def main() -> None:
     while True:
         show_menu()
-        choice = input('Selecciona una opcion [1-5]: ').strip()
+        choice = prompt_input('Selecciona una opcion [1-5]: ')
+        if choice is None:
+            break
 
         if choice == '1':
             run_script('scripts/fetch_crypto_data.py')

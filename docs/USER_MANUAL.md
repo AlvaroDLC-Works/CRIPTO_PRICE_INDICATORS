@@ -77,9 +77,15 @@ Opciones disponibles:
 
 - Descargar datos.
 - Editar configuracion `config/.env`.
-- Ejecutar analisis futuro. Actualmente muestra un aviso de modulo en construccion.
+- Abrir el submenu de analisis.
 - Abrir herramientas de mantenimiento.
 - Salir.
+
+El submenu `Analisis` permite:
+
+- Cargar un archivo base desde `data/raw/`.
+- Crear una estrategia. Actualmente el tipo soportado es `ema40`.
+- Aplicar una estrategia y guardar un CSV en `data/analysis/` con columnas como `strategy_name` y `ema_40`.
 
 El menu `Herramientas` permite:
 

@@ -42,7 +42,7 @@ Para solicitar analisis despues de preparar el ambiente:
 .\CriptoPriceStart.ps1 -Symbols BTC -Timeframe 1w -Analysis
 ```
 
-El modulo de analisis aun esta en construccion. Por ahora solo muestra un aviso y no modifica la descarga de data pura.
+El parametro `-Analysis` abre el modulo de analisis para cargar archivos base, crear sistemas de senales y aplicarlos sobre CSV ya descargados.
 
 Parametros disponibles:
 
@@ -53,7 +53,7 @@ Parametros disponibles:
 - `-Limit`: cantidad de velas por batch.
 - `-Since`: fecha inicial, por ejemplo `2026-03-01`.
 - `-RunDownload`: ejecuta la descarga directamente despues de preparar el ambiente.
-- `-Analysis`: ejecuta el modulo de analisis. Actualmente muestra un mensaje de construccion.
+- `-Analysis`: ejecuta el modulo de analisis.
 
 ## Configuracion
 
@@ -86,7 +86,7 @@ analysis260531121500.zip
 todos260531121500.zip
 ```
 
-La opcion `Analisis` del menu principal esta reservada para futuros calculos. Actualmente muestra un mensaje de "en construccion" y no altera los CSV descargados.
+La opcion `Analisis` del menu principal permite trabajar con sistemas de senales sobre los CSV base ya descargados.
 
 ## Uso
 
@@ -112,18 +112,18 @@ La opcion `Analisis` del menu principal abre un submenu:
 
 ```text
 1) Cargar Archivos Base
-2) Crear estrategia
-3) Aplicar estrategia
+2) Crear Sistema de senales
+3) Aplicar Sistema de senales
 4) Volver al menu principal
 ```
 
 - `Cargar Archivos Base`: permite seleccionar un CSV desde `data/raw/`. Si no eliges uno, se usa por defecto el ultimo archivo generado.
-- `Crear estrategia`: lista indicadores desde `config/indicators.json` y registra una estrategia en `config/analysis_strategies.json`.
-- `Aplicar estrategia`: permite elegir una estrategia creada y genera un nuevo CSV en `data/analysis/`.
+- `Crear Sistema de senales`: lista indicadores desde `config/indicators.json` y registra un sistema en `config/signal_systems.json`.
+- `Aplicar Sistema de senales`: permite elegir un sistema creado y genera un nuevo CSV en `data/analysis/`.
 
 El CSV de analisis conserva los datos base y agrega columnas de resultado, por ejemplo:
 
-- `strategy_name`: nombre de la estrategia aplicada.
+- `signal_system_name`: nombre del sistema de senales aplicado.
 - `ema_40`: media movil exponencial de 40 periodos calculada sobre `close`.
 
 Los indicadores iniciales disponibles son:
@@ -162,9 +162,10 @@ El codigo usa `enableRateLimit=True` en `ccxt` y reintentos con backoff para evi
 ## Estructura
 
 - `config/`: definicion de campos editables para el menu de configuracion.
-- `config/indicators.json`: catalogo de indicadores disponibles para crear estrategias.
+- `config/indicators.json`: catalogo de indicadores disponibles para crear sistemas de senales.
+- `config/signal_systems.json`: sistemas de senales creados para el modulo de analisis.
 - `data/raw/`: archivos CSV generados por las descargas.
-- `data/analysis/`: archivos CSV generados por estrategias de analisis.
+- `data/analysis/`: archivos CSV generados por sistemas de senales.
 - `backup/`: archivos comprimidos generados por la limpieza de CSV.
 - `docs/`: documentacion extendida.
 - `scripts/`: scripts de instalacion, descarga, configuracion y analisis.

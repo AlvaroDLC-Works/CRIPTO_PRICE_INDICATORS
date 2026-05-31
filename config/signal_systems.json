@@ -1,5 +1,5 @@
 {
-  "strategies": [
+  "signal_systems": [
     {
       "name": "EMA40 Close Cross",
       "indicator_id": "ema",

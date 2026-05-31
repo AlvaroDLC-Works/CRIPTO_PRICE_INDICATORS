@@ -84,8 +84,8 @@ Opciones disponibles:
 El submenu `Analisis` permite:
 
 - Cargar un archivo base desde `data/raw/`.
-- Crear una estrategia eligiendo un indicador desde `config/indicators.json`.
-- Aplicar una estrategia y guardar un CSV en `data/analysis/` con columnas como `strategy_name` y `ema_40`.
+- Crear un sistema de senales eligiendo un indicador desde `config/indicators.json`.
+- Aplicar un sistema de senales y guardar un CSV en `data/analysis/` con columnas como `signal_system_name` y `ema_40`.
 
 El menu `Herramientas` permite:
 

@@ -14,8 +14,8 @@ except ImportError:
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DATA_DIR = PROJECT_ROOT / 'data' / 'raw'
 ANALYSIS_DATA_DIR = PROJECT_ROOT / 'data' / 'analysis'
-STRATEGIES_PATH = PROJECT_ROOT / 'config' / 'analysis_strategies.json'
-DEFAULT_STRATEGY = {
+SIGNAL_SYSTEMS_PATH = PROJECT_ROOT / 'config' / 'signal_systems.json'
+DEFAULT_SIGNAL_SYSTEM = {
     'name': 'EMA40 Close Cross',
     'indicator_id': 'ema',
     'source': 'close',
@@ -63,22 +63,22 @@ def add_ema40_close_cross_signals(
     return result
 
 
-def load_strategies() -> list[dict[str, str]]:
-    if not STRATEGIES_PATH.exists():
-        save_strategies([DEFAULT_STRATEGY])
+def load_signal_systems() -> list[dict[str, str]]:
+    if not SIGNAL_SYSTEMS_PATH.exists():
+        save_signal_systems([DEFAULT_SIGNAL_SYSTEM])
 
-    data = json.loads(STRATEGIES_PATH.read_text(encoding='utf-8'))
-    strategies = data.get('strategies', [])
-    if not strategies:
-        strategies = [DEFAULT_STRATEGY]
-        save_strategies(strategies)
-    return strategies
+    data = json.loads(SIGNAL_SYSTEMS_PATH.read_text(encoding='utf-8'))
+    signal_systems = data.get('signal_systems', [])
+    if not signal_systems:
+        signal_systems = [DEFAULT_SIGNAL_SYSTEM]
+        save_signal_systems(signal_systems)
+    return signal_systems
 
 
-def save_strategies(strategies: list[dict[str, str]]) -> None:
-    STRATEGIES_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STRATEGIES_PATH.write_text(
-        json.dumps({'strategies': strategies}, indent=2, ensure_ascii=False) + '\n',
+def save_signal_systems(signal_systems: list[dict[str, str]]) -> None:
+    SIGNAL_SYSTEMS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SIGNAL_SYSTEMS_PATH.write_text(
+        json.dumps({'signal_systems': signal_systems}, indent=2, ensure_ascii=False) + '\n',
         encoding='utf-8',
     )
 
@@ -115,27 +115,27 @@ def select_base_file() -> Path | None:
     return selected
 
 
-def create_strategy() -> None:
-    strategies = load_strategies()
+def create_signal_system() -> None:
+    signal_systems = load_signal_systems()
     indicators = load_indicators()
 
-    print('\n=== Crear estrategia ===')
+    print('\n=== Crear Sistema de senales ===')
     print('Indicadores disponibles:')
     for index, indicator in enumerate(indicators, start=1):
         default_source = indicator.get('default_source', 'ohlc')
         default_length = indicator.get('default_length', 'n/a')
         print(f'{index}) {indicator["name"]} [{indicator["id"]}] source={default_source} length={default_length}')
 
-    name_value = prompt_input('Nombre de estrategia (Enter para EMA40 Close Cross): ')
+    name_value = prompt_input('Nombre del sistema de senales (Enter para EMA40 Close Cross): ')
     if name_value is None:
         return
     indicator_choice = prompt_input('Selecciona indicador [1-{}] (Enter para EMA): '.format(len(indicators)))
     if indicator_choice is None:
         return
 
-    name = name_value or DEFAULT_STRATEGY['name']
+    name = name_value or DEFAULT_SIGNAL_SYSTEM['name']
     if not indicator_choice:
-        indicator = get_indicator(DEFAULT_STRATEGY['indicator_id'])
+        indicator = get_indicator(DEFAULT_SIGNAL_SYSTEM['indicator_id'])
     elif indicator_choice.isdigit() and 1 <= int(indicator_choice) <= len(indicators):
         indicator = indicators[int(indicator_choice) - 1]
     else:
@@ -157,60 +157,60 @@ def create_strategy() -> None:
             return
         length = int(length_value or length)
 
-    if any(strategy['name'].lower() == name.lower() for strategy in strategies):
-        print('Ya existe una estrategia con ese nombre.')
+    if any(signal_system['name'].lower() == name.lower() for signal_system in signal_systems):
+        print('Ya existe un sistema de senales con ese nombre.')
         return
 
-    strategy = {
+    signal_system = {
         'name': name,
         'indicator_id': indicator['id'],
     }
     if indicator['id'] != 'atr':
-        strategy['source'] = source
+        signal_system['source'] = source
     if length is not None:
-        strategy['length'] = length
+        signal_system['length'] = length
     for key in ['fast_length', 'slow_length', 'signal_length', 'std_multiplier']:
         if key in indicator:
-            strategy[key] = indicator[key]
+            signal_system[key] = indicator[key]
 
-    strategies.append(strategy)
-    save_strategies(strategies)
-    print(f'Estrategia creada: {name} ({indicator["id"]})')
+    signal_systems.append(signal_system)
+    save_signal_systems(signal_systems)
+    print(f'Sistema de senales creado: {name} ({indicator["id"]})')
 
 
-def select_strategy() -> dict[str, str] | None:
-    strategies = load_strategies()
+def select_signal_system() -> dict[str, str] | None:
+    signal_systems = load_signal_systems()
 
-    print('\n=== Estrategias disponibles ===')
-    for index, strategy in enumerate(strategies, start=1):
-        indicator_id = strategy.get('indicator_id', strategy.get('type', 'ema40'))
-        print(f'{index}) {strategy["name"]} [{indicator_id}]')
+    print('\n=== Sistemas de senales disponibles ===')
+    for index, signal_system in enumerate(signal_systems, start=1):
+        indicator_id = signal_system.get('indicator_id', signal_system.get('type', 'ema40'))
+        print(f'{index}) {signal_system["name"]} [{indicator_id}]')
 
-    choice = prompt_input('Selecciona estrategia [1-{}]: '.format(len(strategies)))
+    choice = prompt_input('Selecciona sistema de senales [1-{}]: '.format(len(signal_systems)))
     if choice is None:
         return None
-    if choice.isdigit() and 1 <= int(choice) <= len(strategies):
-        return strategies[int(choice) - 1]
+    if choice.isdigit() and 1 <= int(choice) <= len(signal_systems):
+        return signal_systems[int(choice) - 1]
 
     print('Opcion no valida.')
     return None
 
 
-def apply_strategy_to_dataframe(df: pd.DataFrame, strategy: dict[str, str]) -> pd.DataFrame:
-    if 'indicator_id' not in strategy and strategy.get('type') == 'ema40':
-        strategy = {
-            **strategy,
+def apply_signal_system_to_dataframe(df: pd.DataFrame, signal_system: dict[str, str]) -> pd.DataFrame:
+    if 'indicator_id' not in signal_system and signal_system.get('type') == 'ema40':
+        signal_system = {
+            **signal_system,
             'indicator_id': 'ema',
             'source': 'close',
             'length': 40,
         }
 
-    result, calculated_columns = apply_indicator(df, strategy)
-    result['strategy_name'] = strategy['name']
+    result, calculated_columns = apply_indicator(df, signal_system)
+    result['signal_system_name'] = signal_system['name']
 
     ordered_columns = list(df.columns)
-    if 'strategy_name' not in ordered_columns:
-        ordered_columns.append('strategy_name')
+    if 'signal_system_name' not in ordered_columns:
+        ordered_columns.append('signal_system_name')
     for column in calculated_columns:
         if column not in ordered_columns:
             ordered_columns.append(column)
@@ -220,29 +220,29 @@ def apply_strategy_to_dataframe(df: pd.DataFrame, strategy: dict[str, str]) -> p
 
 def sanitize_filename_part(value: str) -> str:
     cleaned = re.sub(r'[^A-Za-z0-9]+', '', value)
-    return cleaned or 'strategy'
+    return cleaned or 'signals'
 
 
-def build_analysis_filename(base_file: Path, strategy: dict[str, str]) -> Path:
+def build_analysis_filename(base_file: Path, signal_system: dict[str, str]) -> Path:
     timestamp = datetime.now(timezone.utc).strftime('%y%m%d%H%M%S')
-    strategy_code = sanitize_filename_part(strategy['name'])
-    return ANALYSIS_DATA_DIR / f'{base_file.stem}{strategy_code}{timestamp}.csv'
+    signal_system_code = sanitize_filename_part(signal_system['name'])
+    return ANALYSIS_DATA_DIR / f'{base_file.stem}{signal_system_code}{timestamp}.csv'
 
 
-def apply_strategy(base_file: Path | None = None) -> Path | None:
+def apply_signal_system(base_file: Path | None = None) -> Path | None:
     selected_base_file = base_file or select_base_file()
     if selected_base_file is None:
         return None
 
-    strategy = select_strategy()
-    if strategy is None:
+    signal_system = select_signal_system()
+    if signal_system is None:
         return None
 
     df = pd.read_csv(selected_base_file)
-    analyzed_df = apply_strategy_to_dataframe(df, strategy)
+    analyzed_df = apply_signal_system_to_dataframe(df, signal_system)
 
     ANALYSIS_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = build_analysis_filename(selected_base_file, strategy)
+    output_path = build_analysis_filename(selected_base_file, signal_system)
     analyzed_df.to_csv(output_path, index=False)
 
     print(f'Analisis guardado: {output_path}')
@@ -254,8 +254,8 @@ def show_analysis_menu(current_file: Path | None) -> None:
     print('\n=== Analisis ===')
     print(f'Archivo base actual: {selected_name}')
     print('1) Cargar Archivos Base')
-    print('2) Crear estrategia')
-    print('3) Aplicar estrategia')
+    print('2) Crear Sistema de senales')
+    print('3) Aplicar Sistema de senales')
     print('4) Volver al menu principal')
 
 
@@ -281,11 +281,11 @@ def analysis_menu() -> None:
             if selected_file is not None:
                 current_file = selected_file
         elif choice == '2':
-            create_strategy()
+            create_signal_system()
         elif choice == '3':
-            output_path = apply_strategy(current_file)
+            output_path = apply_signal_system(current_file)
             if output_path is not None:
-                print('Columnas agregadas: strategy_name y columnas calculadas por la estrategia.')
+                print('Columnas agregadas: signal_system_name y columnas calculadas por el sistema de senales.')
         elif choice == '4':
             break
         else:

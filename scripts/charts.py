@@ -390,7 +390,7 @@ def build_dxf_content(df: pd.DataFrame, columns: list[str], use_polyline: bool) 
         parts.append(f'0\nLAYER\n2\n{layer}\n70\n0\n62\n{layer_colors[layer]}\n6\nCONTINUOUS\n')
     parts.append('0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n')
 
-    x_spacing = 10.0
+    x_spacing = 100.0
     cross_size = 2.5
     for column, layer in zip(columns, layer_names):
         series = pd.to_numeric(df[column], errors='coerce')

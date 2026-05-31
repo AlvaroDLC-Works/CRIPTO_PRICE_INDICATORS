@@ -2,15 +2,33 @@
   "signal_systems": [
     {
       "name": "EMA40 Close Cross",
-      "indicator_id": "ema",
-      "source": "close",
-      "length": 40
+      "indicators": [
+        {
+          "indicator_id": "ema",
+          "source": "close",
+          "length": 40
+        }
+      ]
     },
     {
       "name": "estra01",
-      "indicator_id": "ema",
-      "source": "close",
-      "length": 40
+      "indicators": [
+        {
+          "indicator_id": "ema",
+          "source": "close",
+          "length": 40
+        }
+      ]
+    },
+    {
+      "name": "SigTest01",
+      "indicators": [
+        {
+          "indicator_id": "ema",
+          "source": "close",
+          "length": 40
+        }
+      ]
     }
   ]
 }

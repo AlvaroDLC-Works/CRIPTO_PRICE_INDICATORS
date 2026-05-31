@@ -192,7 +192,7 @@ def add_roc(df: pd.DataFrame, source: str = 'close', length: int = 12) -> tuple[
 
 
 def apply_indicator(df: pd.DataFrame, indicator_config: dict) -> tuple[pd.DataFrame, list[str]]:
-    indicator_id = indicator_config.get('id', indicator_config.get('type', 'ema')).strip().lower()
+    indicator_id = indicator_config.get('indicator_id', indicator_config.get('id', indicator_config.get('type', 'ema'))).strip().lower()
     source = indicator_config.get('source') or indicator_config.get('default_source', 'close')
     length = int(indicator_config.get('length', indicator_config.get('default_length', 40)))
 

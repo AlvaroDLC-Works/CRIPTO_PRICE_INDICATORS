@@ -17,9 +17,13 @@ ANALYSIS_DATA_DIR = PROJECT_ROOT / 'data' / 'analysis'
 SIGNAL_SYSTEMS_PATH = PROJECT_ROOT / 'config' / 'signal_systems.json'
 DEFAULT_SIGNAL_SYSTEM = {
     'name': 'EMA40 Close Cross',
-    'indicator_id': 'ema',
-    'source': 'close',
-    'length': 40,
+    'indicators': [
+        {
+            'indicator_id': 'ema',
+            'source': 'close',
+            'length': 40,
+        },
+    ],
 }
 
 
@@ -69,16 +73,31 @@ def load_signal_systems() -> list[dict[str, str]]:
 
     data = json.loads(SIGNAL_SYSTEMS_PATH.read_text(encoding='utf-8'))
     signal_systems = data.get('signal_systems', [])
-    if not signal_systems:
-        signal_systems = [DEFAULT_SIGNAL_SYSTEM]
-        save_signal_systems(signal_systems)
-    return signal_systems
+    return [normalize_signal_system(signal_system) for signal_system in signal_systems]
+
+
+def normalize_signal_system(signal_system: dict) -> dict:
+    if 'indicators' in signal_system:
+        return signal_system
+
+    indicator = {
+        'indicator_id': signal_system.get('indicator_id', signal_system.get('type', 'ema')),
+    }
+    for key in ['source', 'length', 'fast_length', 'slow_length', 'signal_length', 'std_multiplier']:
+        if key in signal_system:
+            indicator[key] = signal_system[key]
+
+    return {
+        'name': signal_system.get('name', 'Sistema de senales'),
+        'indicators': [indicator],
+    }
 
 
 def save_signal_systems(signal_systems: list[dict[str, str]]) -> None:
     SIGNAL_SYSTEMS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    normalized_signal_systems = [normalize_signal_system(signal_system) for signal_system in signal_systems]
     SIGNAL_SYSTEMS_PATH.write_text(
-        json.dumps({'signal_systems': signal_systems}, indent=2, ensure_ascii=False) + '\n',
+        json.dumps({'signal_systems': normalized_signal_systems}, indent=2, ensure_ascii=False) + '\n',
         encoding='utf-8',
     )
 
@@ -92,7 +111,7 @@ def list_base_files() -> list[Path]:
 def select_base_file() -> Path | None:
     files = list_base_files()
     if not files:
-        print('No hay archivos base en data/raw/. Ejecuta primero la opcion 1 del menu principal.')
+        print('No hay archivos base en data/raw/. Ejecuta primero la opcion 2 del menu principal.')
         return None
 
     print('\n=== Archivos base disponibles ===')
@@ -115,79 +134,105 @@ def select_base_file() -> Path | None:
     return selected
 
 
-def create_signal_system() -> None:
-    signal_systems = load_signal_systems()
-    indicators = load_indicators()
-
-    print('\n=== Crear Sistema de senales ===')
-    print('Indicadores disponibles:')
+def print_indicators(indicators: list[dict]) -> None:
     for index, indicator in enumerate(indicators, start=1):
         default_source = indicator.get('default_source', 'ohlc')
         default_length = indicator.get('default_length', 'n/a')
         print(f'{index}) {indicator["name"]} [{indicator["id"]}] source={default_source} length={default_length}')
 
-    name_value = prompt_input('Nombre del sistema de senales (Enter para EMA40 Close Cross): ')
-    if name_value is None:
-        return
-    indicator_choice = prompt_input('Selecciona indicador [1-{}] (Enter para EMA): '.format(len(indicators)))
-    if indicator_choice is None:
-        return
 
-    name = name_value or DEFAULT_SIGNAL_SYSTEM['name']
+def build_indicator_config(indicators: list[dict], default_indicator_id: str = 'ema') -> dict | None:
+    print('Indicadores disponibles:')
+    print_indicators(indicators)
+
+    indicator_choice = prompt_input('Selecciona indicador [1-{}] (Enter para EMA, A para atras): '.format(len(indicators)))
+    if indicator_choice is None or indicator_choice.lower() == 'a':
+        return None
+
     if not indicator_choice:
-        indicator = get_indicator(DEFAULT_SIGNAL_SYSTEM['indicator_id'])
+        indicator = get_indicator(default_indicator_id)
     elif indicator_choice.isdigit() and 1 <= int(indicator_choice) <= len(indicators):
         indicator = indicators[int(indicator_choice) - 1]
     else:
         print('Opcion no valida.')
-        return
+        return None
+
+    indicator_config = {
+        'indicator_id': indicator['id'],
+    }
 
     source = indicator.get('default_source', 'close')
     if indicator['id'] != 'atr':
         source_value = prompt_input(f'Source (Enter para {source}): ')
         if source_value is None:
-            return
-        source = source_value or source
+            return None
+        indicator_config['source'] = source_value or source
 
     length = indicator.get('default_length')
-    length_value = None
     if length is not None:
         length_value = prompt_input(f'Length (Enter para {length}): ')
         if length_value is None:
-            return
-        length = int(length_value or length)
+            return None
+        indicator_config['length'] = int(length_value or length)
 
+    for key in ['fast_length', 'slow_length', 'signal_length', 'std_multiplier']:
+        if key in indicator:
+            indicator_config[key] = indicator[key]
+
+    return indicator_config
+
+
+def create_signal_system() -> None:
+    signal_systems = load_signal_systems()
+    indicators = load_indicators()
+
+    print('\n=== Crear Sistema de senales ===')
+    name_value = prompt_input('Nombre del sistema de senales (Enter para EMA40 Close Cross): ')
+    if name_value is None:
+        return
+
+    name = name_value or DEFAULT_SIGNAL_SYSTEM['name']
     if any(signal_system['name'].lower() == name.lower() for signal_system in signal_systems):
         print('Ya existe un sistema de senales con ese nombre.')
         return
 
+    selected_indicators = []
+    while True:
+        indicator_config = build_indicator_config(indicators)
+        if indicator_config is None:
+            if selected_indicators:
+                break
+            print('Debes agregar al menos un indicador.')
+            return
+
+        selected_indicators.append(indicator_config)
+        add_more = prompt_input('Agregar otro indicador? [s/N]: ')
+        if add_more is None or add_more.lower() != 's':
+            break
+
     signal_system = {
         'name': name,
-        'indicator_id': indicator['id'],
+        'indicators': selected_indicators,
     }
-    if indicator['id'] != 'atr':
-        signal_system['source'] = source
-    if length is not None:
-        signal_system['length'] = length
-    for key in ['fast_length', 'slow_length', 'signal_length', 'std_multiplier']:
-        if key in indicator:
-            signal_system[key] = indicator[key]
-
     signal_systems.append(signal_system)
     save_signal_systems(signal_systems)
-    print(f'Sistema de senales creado: {name} ({indicator["id"]})')
+    print(f'Sistema de senales creado: {name} ({len(selected_indicators)} indicador/es)')
 
 
 def select_signal_system() -> dict[str, str] | None:
     signal_systems = load_signal_systems()
+    if not signal_systems:
+        print('No hay sistemas de senales creados.')
+        return None
 
     print('\n=== Sistemas de senales disponibles ===')
     for index, signal_system in enumerate(signal_systems, start=1):
-        indicator_id = signal_system.get('indicator_id', signal_system.get('type', 'ema40'))
-        print(f'{index}) {signal_system["name"]} [{indicator_id}]')
+        indicator_ids = ', '.join(indicator.get('indicator_id', indicator.get('type', 'ema')) for indicator in signal_system['indicators'])
+        print(f'{index}) {signal_system["name"]} [{indicator_ids}]')
+    print('A) Atras')
 
-    choice = prompt_input('Selecciona sistema de senales [1-{}]: '.format(len(signal_systems)))
-    if choice is None:
+    choice = prompt_input('Selecciona sistema de senales [1-{}] o A para atras: '.format(len(signal_systems)))
+    if choice is None or choice.lower() == 'a':
         return None
     if choice.isdigit() and 1 <= int(choice) <= len(signal_systems):
         return signal_systems[int(choice) - 1]
@@ -197,15 +242,13 @@ def select_signal_system() -> dict[str, str] | None:
 
 
 def apply_signal_system_to_dataframe(df: pd.DataFrame, signal_system: dict[str, str]) -> pd.DataFrame:
-    if 'indicator_id' not in signal_system and signal_system.get('type') == 'ema40':
-        signal_system = {
-            **signal_system,
-            'indicator_id': 'ema',
-            'source': 'close',
-            'length': 40,
-        }
+    signal_system = normalize_signal_system(signal_system)
+    result = df.copy()
+    calculated_columns = []
+    for indicator_config in signal_system['indicators']:
+        result, new_columns = apply_indicator(result, indicator_config)
+        calculated_columns.extend(column for column in new_columns if column not in calculated_columns)
 
-    result, calculated_columns = apply_indicator(df, signal_system)
     result['signal_system_name'] = signal_system['name']
 
     ordered_columns = list(df.columns)
@@ -216,6 +259,35 @@ def apply_signal_system_to_dataframe(df: pd.DataFrame, signal_system: dict[str, 
             ordered_columns.append(column)
 
     return result[ordered_columns]
+
+
+def delete_signal_system() -> None:
+    signal_systems = load_signal_systems()
+    if not signal_systems:
+        print('No hay sistemas de senales para eliminar.')
+        return
+
+    print('\n=== Eliminar Sistema de senales ===')
+    for index, signal_system in enumerate(signal_systems, start=1):
+        print(f'{index}) {signal_system["name"]}')
+    print('A) Atras')
+
+    choice = prompt_input('Selecciona sistema a eliminar [1-{}] o A para atras: '.format(len(signal_systems)))
+    if choice is None or choice.lower() == 'a':
+        return
+    if not choice.isdigit() or not 1 <= int(choice) <= len(signal_systems):
+        print('Opcion no valida.')
+        return
+
+    selected = signal_systems[int(choice) - 1]
+    confirm = prompt_input(f'Eliminar "{selected["name"]}"? [s/N]: ')
+    if confirm is None or confirm.lower() != 's':
+        print('Eliminacion cancelada.')
+        return
+
+    del signal_systems[int(choice) - 1]
+    save_signal_systems(signal_systems)
+    print(f'Sistema de senales eliminado: {selected["name"]}')
 
 
 def sanitize_filename_part(value: str) -> str:
@@ -256,7 +328,8 @@ def show_analysis_menu(current_file: Path | None) -> None:
     print('1) Cargar Archivos Base')
     print('2) Crear Sistema de senales')
     print('3) Aplicar Sistema de senales')
-    print('4) Volver al menu principal')
+    print('4) Eliminar Sistema de senales')
+    print('5) Volver al menu principal')
 
 
 def prompt_input(prompt: str) -> str | None:
@@ -272,7 +345,7 @@ def analysis_menu() -> None:
 
     while True:
         show_analysis_menu(current_file)
-        choice = prompt_input('Selecciona una opcion [1-4]: ')
+        choice = prompt_input('Selecciona una opcion [1-5]: ')
         if choice is None:
             break
 
@@ -287,6 +360,8 @@ def analysis_menu() -> None:
             if output_path is not None:
                 print('Columnas agregadas: signal_system_name y columnas calculadas por el sistema de senales.')
         elif choice == '4':
+            delete_signal_system()
+        elif choice == '5':
             break
         else:
             print('Opcion no valida. Intenta de nuevo.')

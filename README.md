@@ -86,7 +86,15 @@ analysis260531121500.zip
 todos260531121500.zip
 ```
 
-La opcion `Analisis` del menu principal permite trabajar con sistemas de senales sobre los CSV base ya descargados.
+El menu principal muestra primero un dashboard con la configuracion de descarga y el ultimo archivo base disponible en `data/raw/`. Debajo aparecen las opciones:
+
+```text
+1) Configurar Descarga (config/.env)
+2) Descargar Datos (fetch_crypto_data)
+3) Analisis de Datos
+4) Herramientas
+5) Salir
+```
 
 ## Uso
 
@@ -114,17 +122,21 @@ La opcion `Analisis` del menu principal abre un submenu:
 1) Cargar Archivos Base
 2) Crear Sistema de senales
 3) Aplicar Sistema de senales
-4) Volver al menu principal
+4) Eliminar Sistema de senales
+5) Volver al menu principal
 ```
 
 - `Cargar Archivos Base`: permite seleccionar un CSV desde `data/raw/`. Si no eliges uno, se usa por defecto el ultimo archivo generado.
-- `Crear Sistema de senales`: lista indicadores desde `config/indicators.json` y registra un sistema en `config/signal_systems.json`.
+- `Crear Sistema de senales`: lista indicadores desde `config/indicators.json` y registra uno o varios indicadores dentro de un sistema en `config/signal_systems.json`.
 - `Aplicar Sistema de senales`: permite elegir un sistema creado y genera un nuevo CSV en `data/analysis/`.
+- `Eliminar Sistema de senales`: permite borrar un sistema guardado.
 
 El CSV de analisis conserva los datos base y agrega columnas de resultado, por ejemplo:
 
 - `signal_system_name`: nombre del sistema de senales aplicado.
 - `ema_40`: media movil exponencial de 40 periodos calculada sobre `close`.
+
+Cuando el sistema contiene mas de un indicador, el CSV agrega una columna por cada resultado calculado, por ejemplo `ema_40`, `rsi_14` o las columnas de `macd`.
 
 Los indicadores iniciales disponibles son:
 

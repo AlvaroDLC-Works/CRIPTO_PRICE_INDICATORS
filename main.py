@@ -4,6 +4,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_ROOT / 'config' / '.env'
+RAW_DATA_DIR = PROJECT_ROOT / 'data' / 'raw'
 
 
 def run_script(script_name: str) -> int:
@@ -27,13 +28,13 @@ def prompt_input(prompt: str) -> str | None:
 
 
 def show_menu() -> None:
+    print(build_download_dashboard())
     print('\n=== CriptoPrice Menu ===')
-    print('1) Descargar datos (fetch_crypto_data)')
-    print('2) Editar configuracion (config/.env)')
-    print('3) Analisis')
+    print('1) Configurar Descarga (config/.env)')
+    print('2) Descargar Datos (fetch_crypto_data)')
+    print('3) Analisis de Datos')
     print('4) Herramientas')
     print('5) Salir')
-    print(build_download_dashboard())
 
 
 def show_tools_menu() -> None:
@@ -72,6 +73,16 @@ def parse_base_symbols(raw_symbols: str) -> list[str]:
     return [symbol.strip().split('/', 1)[0].upper() for symbol in raw_symbols.split(',') if symbol.strip()]
 
 
+def get_latest_raw_file() -> str:
+    if not RAW_DATA_DIR.exists():
+        return 'sin archivo base'
+
+    files = sorted(RAW_DATA_DIR.glob('*.csv'), key=lambda path: path.stat().st_mtime, reverse=True)
+    if not files:
+        return 'sin archivo base'
+    return files[0].name
+
+
 def build_download_dashboard() -> str:
     values = read_env_values()
     exchange = values['EXCHANGE']
@@ -89,6 +100,7 @@ def build_download_dashboard() -> str:
         f'Timeframe: {values["TIMEFRAME"]}\n'
         f'Limite por batch: {values["LIMIT"]}\n'
         f'Desde: {values["SINCE"]}\n'
+        f'Archivo base actual: {get_latest_raw_file()}\n'
         'Activo de intercambio asumido: USDT'
     )
 
@@ -120,9 +132,9 @@ def main() -> None:
             break
 
         if choice == '1':
-            run_script('scripts/fetch_crypto_data.py')
-        elif choice == '2':
             run_script('scripts/env_config_editor.py')
+        elif choice == '2':
+            run_script('scripts/fetch_crypto_data.py')
         elif choice == '3':
             run_script('scripts/analysis.py')
         elif choice == '4':

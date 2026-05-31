@@ -75,17 +75,20 @@ Ejecuta:
 
 Opciones disponibles:
 
+- Configurar descarga `config/.env`.
 - Descargar datos.
-- Editar configuracion `config/.env`.
-- Abrir el submenu de analisis.
+- Abrir el submenu de analisis de datos.
 - Abrir herramientas de mantenimiento.
 - Salir.
+
+El menu principal muestra primero un dashboard informativo con los parametros actuales y el ultimo archivo base disponible.
 
 El submenu `Analisis` permite:
 
 - Cargar un archivo base desde `data/raw/`.
-- Crear un sistema de senales eligiendo un indicador desde `config/indicators.json`.
-- Aplicar un sistema de senales y guardar un CSV en `data/analysis/` con columnas como `signal_system_name` y `ema_40`.
+- Crear un sistema de senales eligiendo uno o varios indicadores desde `config/indicators.json`.
+- Aplicar un sistema de senales y guardar un CSV en `data/analysis/` con columnas como `signal_system_name`, `ema_40` o `rsi_14`.
+- Eliminar sistemas de senales guardados.
 
 El menu `Herramientas` permite:
 

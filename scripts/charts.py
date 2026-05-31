@@ -396,10 +396,10 @@ def build_dxf_content(df: pd.DataFrame, columns: list[str], use_polyline: bool) 
         series = pd.to_numeric(df[column], errors='coerce')
         points = [(index * x_spacing, float(value)) for index, value in enumerate(series) if pd.notna(value)]
         if use_polyline and points:
-            parts.append(f'0\nLWPOLYLINE\n8\n{layer}\n62\n{layer_colors[layer]}\n90\n{len(points)}\n70\n0\n')
+            parts.append(f'0\nPOLYLINE\n8\n{layer}\n62\n{layer_colors[layer]}\n66\n1\n70\n8\n')
             for x, y in points:
-                parts.append(dxf_pair(10, f'{x:.6f}'))
-                parts.append(dxf_pair(20, f'{y:.6f}'))
+                parts.append(f'0\nVERTEX\n8\n{layer}\n62\n{layer_colors[layer]}\n10\n{x:.6f}\n20\n{y:.6f}\n30\n0\n')
+            parts.append(f'0\nSEQEND\n8\n{layer}\n')
             for x, y in points:
                 parts.append(f'0\nPOINT\n8\n{layer}\n62\n{layer_colors[layer]}\n10\n{x:.6f}\n20\n{y:.6f}\n30\n0\n')
         else:

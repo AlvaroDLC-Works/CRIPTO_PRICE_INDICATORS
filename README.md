@@ -76,6 +76,15 @@ El menu `Herramientas` permite ejecutar utilidades de mantenimiento:
 
 - Verificar o reparar el ambiente con `scripts/install.py`.
 - Regenerar `config/env_config_fields.json` desde `config/.env.example`.
+- Limpiar CSV de `data/raw/`, `data/analysis/` o ambos, creando antes un `.zip` en `backup/`.
+
+La herramienta de limpieza conserva la estructura dentro del `.zip`, por ejemplo `data/raw/...csv` y `data/analysis/...csv`. Los nombres de backup son cortos:
+
+```text
+raw260531121500.zip
+analysis260531121500.zip
+todos260531121500.zip
+```
 
 La opcion `Analisis` del menu principal esta reservada para futuros calculos. Actualmente muestra un mensaje de "en construccion" y no altera los CSV descargados.
 
@@ -156,6 +165,7 @@ El codigo usa `enableRateLimit=True` en `ccxt` y reintentos con backoff para evi
 - `config/indicators.json`: catalogo de indicadores disponibles para crear estrategias.
 - `data/raw/`: archivos CSV generados por las descargas.
 - `data/analysis/`: archivos CSV generados por estrategias de analisis.
+- `backup/`: archivos comprimidos generados por la limpieza de CSV.
 - `docs/`: documentacion extendida.
 - `scripts/`: scripts de instalacion, descarga, configuracion y analisis.
 - `scripts/Indicacdores.py`: funciones Python para calcular indicadores tecnicos.

@@ -91,6 +91,7 @@ El menu `Herramientas` permite:
 
 - Verificar o reparar el ambiente con `scripts/install.py`.
 - Regenerar `config/env_config_fields.json` desde `config/.env.example`.
+- Limpiar CSV de `data/raw/`, `data/analysis/` o ambos, generando un backup `.zip` antes de borrar.
 
 ## 7. Descargar datos
 

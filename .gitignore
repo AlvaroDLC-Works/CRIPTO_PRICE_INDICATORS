@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 config/.env
 data/
+backup/
 *.sqlite
 *.db
 .DS_Store

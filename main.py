@@ -40,7 +40,8 @@ def show_tools_menu() -> None:
     print('\n=== Herramientas ===')
     print('1) Verificar / reparar ambiente (install)')
     print('2) Regenerar config/env_config_fields.json')
-    print('3) Volver al menu principal')
+    print('3) Limpiar CSV con backup')
+    print('4) Volver al menu principal')
 
 
 def read_env_values() -> dict[str, str]:
@@ -95,7 +96,7 @@ def build_download_dashboard() -> str:
 def tools_menu() -> None:
     while True:
         show_tools_menu()
-        choice = prompt_input('Selecciona una herramienta [1-3]: ')
+        choice = prompt_input('Selecciona una herramienta [1-4]: ')
         if choice is None:
             break
 
@@ -104,6 +105,8 @@ def tools_menu() -> None:
         elif choice == '2':
             run_script('scripts/env_config_fields_generator.py')
         elif choice == '3':
+            run_script('scripts/cleanup_csv.py')
+        elif choice == '4':
             break
         else:
             print('Opcion no valida. Intenta de nuevo.')

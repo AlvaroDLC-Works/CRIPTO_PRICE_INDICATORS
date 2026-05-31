@@ -42,11 +42,21 @@
 verifica el proceso para obtener este menu:
 Lee archivo .env para determinar cantidad y nombre de parametros, en base a esa lista crea archivo json a ser usado en codigo para generar el menu y poder editar todos los parametros que se deseen.
 
-- crear menu graficos en el menu principal debajo de 3) Analisis de Datos.
-    - ver en pantalla con velas tipo TradingView.
-    - exportar grafico en PDF horizontal.
-    - exportar grafico en CAD/DXF con layer por columna, polilineas/puntos o puntos X.
-
-
+- crear menu graficos en el menu principal debajo de 3) Analisis de Datos. como 4) Graficos y recocorrer el resto de opciones para abajo
+Menu Graficos
+1) ver en pantalla: (por velas tipo trading view) 
+2) exportar grafico en pdf :(como un screenshot del primero en pdf hazlo en horizontal) 
+3) exportar grafico en cad/dxf:
+    a) para cada columna de datos usar un layer diferente 
+    b) usa el eje x para representar tiempo y el y con el valor resultante en la columna evaluada.
+    c) da la opcion de elegir si van unidos por una polilinea o si son solo puntos
+    d) en el caso de polilineas pon el punto con el simbolo punto
+    e) en el caso de solo punto usa el simbolo de X 
+    No es necesario representar las velas en el grafico cad/dxf solo puntos y polilineas que sean unidos a travez del eje x
 
 # ----- Pendientes -------
+
+- agregar opcion de bajar solo uno o miltiles indicadores sin los datos base
+
+
+

@@ -1,20 +1,21 @@
 import json
-import re
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
 try:
     from Indicacdores import apply_indicator, get_indicator, load_indicators
+    from csv_file_logger import build_download_dashboard, build_unique_csv_path, log_csv_file
 except ImportError:
     from scripts.Indicacdores import apply_indicator, get_indicator, load_indicators
+    from scripts.csv_file_logger import build_download_dashboard, build_unique_csv_path, log_csv_file
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DATA_DIR = PROJECT_ROOT / 'data' / 'raw'
 ANALYSIS_DATA_DIR = PROJECT_ROOT / 'data' / 'analysis'
 SIGNAL_SYSTEMS_PATH = PROJECT_ROOT / 'config' / 'signal_systems.json'
+ENV_PATH = PROJECT_ROOT / 'config' / '.env'
 DEFAULT_SIGNAL_SYSTEM = {
     'name': 'EMA40 Close Cross',
     'indicators': [
@@ -108,6 +109,34 @@ def list_base_files() -> list[Path]:
     return sorted(RAW_DATA_DIR.glob('*.csv'), key=lambda path: path.stat().st_mtime, reverse=True)
 
 
+def read_env_values() -> dict[str, str]:
+    values = {
+        'EXCHANGE': 'binance',
+        'FALLBACK_EXCHANGES': 'bybit,okx,kucoin',
+        'SYMBOLS': 'BTC',
+        'TIMEFRAME': '1d',
+        'LIMIT': '1000',
+        'SINCE': 'sin fecha inicial',
+    }
+    if not ENV_PATH.exists():
+        return values
+
+    for line in ENV_PATH.read_text(encoding='utf-8').splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith('#') and '=' in stripped:
+            key, value = stripped.split('=', 1)
+            values[key.strip()] = value.strip()
+    return values
+
+
+def build_signal_systems_dashboard(signal_systems: list[dict]) -> str:
+    return (
+        '\n--- Estado sistemas de senales ---\n'
+        f'Sistemas guardados: {len(signal_systems)}\n'
+        f'Archivo de sistemas: {SIGNAL_SYSTEMS_PATH.relative_to(PROJECT_ROOT)}'
+    )
+
+
 def select_base_file() -> Path | None:
     files = list_base_files()
     if not files:
@@ -142,6 +171,10 @@ def print_indicators(indicators: list[dict]) -> None:
 
 
 def build_indicator_config(indicators: list[dict], default_indicator_id: str = 'ema') -> dict | None:
+    print('\n--- Estado catalogo de indicadores ---')
+    print(f'Indicadores disponibles: {len(indicators)}')
+    print('Archivo de indicadores: config/indicators.json')
+
     print('Indicadores disponibles:')
     print_indicators(indicators)
 
@@ -225,6 +258,7 @@ def select_signal_system() -> dict[str, str] | None:
         print('No hay sistemas de senales creados.')
         return None
 
+    print(build_signal_systems_dashboard(signal_systems))
     print('\n=== Sistemas de senales disponibles ===')
     for index, signal_system in enumerate(signal_systems, start=1):
         indicator_ids = ', '.join(indicator.get('indicator_id', indicator.get('type', 'ema')) for indicator in signal_system['indicators'])
@@ -267,6 +301,7 @@ def delete_signal_system() -> None:
         print('No hay sistemas de senales para eliminar.')
         return
 
+    print(build_signal_systems_dashboard(signal_systems))
     print('\n=== Eliminar Sistema de senales ===')
     for index, signal_system in enumerate(signal_systems, start=1):
         print(f'{index}) {signal_system["name"]}')
@@ -290,15 +325,8 @@ def delete_signal_system() -> None:
     print(f'Sistema de senales eliminado: {selected["name"]}')
 
 
-def sanitize_filename_part(value: str) -> str:
-    cleaned = re.sub(r'[^A-Za-z0-9]+', '', value)
-    return cleaned or 'signals'
-
-
 def build_analysis_filename(base_file: Path, signal_system: dict[str, str]) -> Path:
-    timestamp = datetime.now(timezone.utc).strftime('%y%m%d%H%M%S')
-    signal_system_code = sanitize_filename_part(signal_system['name'])
-    return ANALYSIS_DATA_DIR / f'{base_file.stem}{signal_system_code}{timestamp}.csv'
+    return build_unique_csv_path(ANALYSIS_DATA_DIR, 'ana')
 
 
 def apply_signal_system(base_file: Path | None = None) -> Path | None:
@@ -316,6 +344,16 @@ def apply_signal_system(base_file: Path | None = None) -> Path | None:
     ANALYSIS_DATA_DIR.mkdir(parents=True, exist_ok=True)
     output_path = build_analysis_filename(selected_base_file, signal_system)
     analyzed_df.to_csv(output_path, index=False)
+    description = (
+        f'Analisis de datos | base={selected_base_file.name} | '
+        f'sistema={signal_system["name"]} | filas={len(analyzed_df)}'
+    )
+    dashboard = (
+        f'{build_download_dashboard(read_env_values())}\n'
+        f'Archivo base analizado: {selected_base_file.name}\n'
+        f'Sistema de senales aplicado: {signal_system["name"]}'
+    )
+    log_csv_file(output_path, description, dashboard)
 
     print(f'Analisis guardado: {output_path}')
     return output_path
@@ -323,8 +361,13 @@ def apply_signal_system(base_file: Path | None = None) -> Path | None:
 
 def show_analysis_menu(current_file: Path | None) -> None:
     selected_name = current_file.name if current_file else 'ultimo archivo generado por defecto'
+    dashboard = (
+        f'{build_download_dashboard(read_env_values())}\n'
+        f'Archivo base actual para analisis: {selected_name}\n'
+        f'Sistemas de senales guardados: {len(load_signal_systems())}'
+    )
+    print(f'\n{dashboard}')
     print('\n=== Analisis ===')
-    print(f'Archivo base actual: {selected_name}')
     print('1) Cargar Archivos Base')
     print('2) Crear Sistema de senales')
     print('3) Aplicar Sistema de senales')

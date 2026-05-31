@@ -14,10 +14,11 @@
 
 - `main.py`: menu principal del proyecto.
 - `CriptoPriceStart.ps1`: instalador y lanzador principal para Windows.
+- `CriptoPriceStart.bat`: lanzador para CMD o doble clic en Windows.
 - `scripts/install.py`: prepara el entorno, crea `config/.env` si no existe y verifica dependencias.
 - `scripts/fetch_crypto_data.py`: descarga datos historicos OHLCV y los exporta a CSV.
 - `scripts/env_config_editor.py`: permite editar `config/.env` desde la terminal.
-- `scripts/env_config_fields_generator.py`: genera `config/env_config_fields.json` desde `config/.env.example`.
+- `scripts/env_config_fields_generator.py`: genera `config/env_config_fields.json` desde `config/.env`.
 - `scripts/analysis.py`: modulo reservado para analisis futuros.
 - `config/env_config_fields.json`: define los campos editables del menu de configuracion.
 - `config/.env.example`: plantilla de configuracion.
@@ -36,6 +37,8 @@ Ejecuta el instalador:
 ```powershell
 .\CriptoPriceStart.ps1
 ```
+
+Tambien puedes ejecutar `CriptoPriceStart.bat` desde CMD o con doble clic en el explorador.
 
 Si Python no esta instalado, el instalador intenta instalar Python 3 con `winget`. Luego crea `.venv`, ejecuta `scripts/install.py` automaticamente y abre `main.py`.
 
@@ -93,8 +96,9 @@ El submenu `Analisis` permite:
 El menu `Herramientas` permite:
 
 - Verificar o reparar el ambiente con `scripts/install.py`.
-- Regenerar `config/env_config_fields.json` desde `config/.env.example`.
+- Regenerar `config/env_config_fields.json` desde `config/.env`.
 - Limpiar CSV de `data/raw/`, `data/analysis/` o ambos, generando un backup `.zip` antes de borrar.
+- Acortar nombres de CSV existentes y registrar el cambio en `data/csv_files_log.txt`.
 
 ## 7. Descargar datos
 
@@ -105,6 +109,7 @@ py scripts/fetch_crypto_data.py
 ```
 
 Esto genera un CSV por cada simbolo configurado en `data/raw/`.
+Los CSV usan un ID corto como `raw26053113255201.csv` y quedan documentados en `data/csv_files_log.txt`.
 
 ## 8. Resultado esperado
 

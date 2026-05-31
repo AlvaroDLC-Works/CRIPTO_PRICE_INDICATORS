@@ -9,6 +9,7 @@ Proyecto para descargar datos historicos de criptoactivos y generar archivos CSV
 ```
 
 El instalador verifica Python. Si no esta instalado, intenta instalar Python 3 con `winget`. Luego crea `.venv`, instala dependencias, crea `config/.env` desde `config/.env.example` si todavia no existe y abre el menu principal.
+Tambien puedes usar `CriptoPriceStart.bat` desde CMD o con doble clic en el explorador de Windows; internamente ejecuta el `.ps1` con la politica de ejecucion adecuada.
 
 Si PowerShell bloquea la ejecucion de scripts, usa:
 
@@ -75,8 +76,9 @@ Tambien puedes usar el menu principal para editar la configuracion:
 El menu `Herramientas` permite ejecutar utilidades de mantenimiento:
 
 - Verificar o reparar el ambiente con `scripts/install.py`.
-- Regenerar `config/env_config_fields.json` desde `config/.env.example`.
+- Regenerar `config/env_config_fields.json` desde `config/.env`.
 - Limpiar CSV de `data/raw/`, `data/analysis/` o ambos, creando antes un `.zip` en `backup/`.
+- Acortar nombres de CSV existentes en `data/raw/` y `data/analysis/`.
 
 La herramienta de limpieza conserva la estructura dentro del `.zip`, por ejemplo `data/raw/...csv` y `data/analysis/...csv`. Los nombres de backup son cortos:
 
@@ -108,7 +110,7 @@ Esto descarga datos OHLCV para los simbolos configurados y genera un CSV por sim
 Ese archivo es la base limpia para analisis, por ejemplo:
 
 ```text
-binanceBTC1w260301260531004807.csv
+raw26053113255201.csv
 ```
 
 Los simbolos se configuran como monedas base. La moneda de intercambio se asume siempre como `USDT`.
@@ -153,21 +155,24 @@ Los indicadores iniciales disponibles son:
 Los archivos generados usan este formato:
 
 ```text
-binanceBTC1w260301260530221801.csv
+raw26053113255201.csv
+ana26053113261001.csv
 ```
 
-El nombre no usa espacios, guiones ni barras bajas. Se compone asi:
+El nombre no usa espacios, guiones ni barras bajas. Es un ID corto con referencia a la fecha de generacion:
 
-- `binance`: exchange.
-- `BTC`: activo base descargado.
-- `1w`: periodo o timeframe.
-- `260301260530221801`: codigo de descarga.
+- `raw`: archivo base descargado en `data/raw/`.
+- `ana`: archivo generado por analisis en `data/analysis/`.
+- `260531132552`: fecha y hora UTC `YYMMDDHHMMSS`.
+- `01`: correlativo para evitar colisiones si se crean varios archivos en el mismo segundo.
 
-El codigo de descarga se lee en bloques:
+Cada CSV generado queda documentado en:
 
-- Primeras 6 cifras: fecha inicial `YYMMDD`, por ejemplo `260301`.
-- Siguientes 6 cifras: fecha de descarga `YYMMDD`, por ejemplo `260530`.
-- Ultimas 6 cifras: hora de descarga `HHMMSS`, por ejemplo `221801`.
+```text
+data/csv_files_log.txt
+```
+
+El log registra el ID corto, ruta del archivo, descripcion y el estado del dashboard al momento de la descarga o del analisis.
 
 El codigo usa `enableRateLimit=True` en `ccxt` y reintentos con backoff para evitar exceder los limites del exchange.
 
@@ -178,8 +183,10 @@ El codigo usa `enableRateLimit=True` en `ccxt` y reintentos con backoff para evi
 - `config/signal_systems.json`: sistemas de senales creados para el modulo de analisis.
 - `data/raw/`: archivos CSV generados por las descargas.
 - `data/analysis/`: archivos CSV generados por sistemas de senales.
+- `data/csv_files_log.txt`: bitacora de IDs cortos y descripcion de CSV generados.
 - `backup/`: archivos comprimidos generados por la limpieza de CSV.
 - `docs/`: documentacion extendida.
 - `scripts/`: scripts de instalacion, descarga, configuracion y analisis.
 - `scripts/Indicacdores.py`: funciones Python para calcular indicadores tecnicos.
 - `CriptoPriceStart.ps1`: instalador y lanzador principal para Windows.
+- `CriptoPriceStart.bat`: lanzador para CMD o doble clic en Windows.

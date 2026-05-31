@@ -26,6 +26,17 @@ def build_backup_name(backup_type: str) -> Path:
     return BACKUP_DIR / f'{backup_type}{timestamp}.zip'
 
 
+def build_cleanup_dashboard() -> str:
+    raw_count = len(list(TARGET_DIRS['raw'].glob('*.csv'))) if TARGET_DIRS['raw'].exists() else 0
+    analysis_count = len(list(TARGET_DIRS['analysis'].glob('*.csv'))) if TARGET_DIRS['analysis'].exists() else 0
+    return (
+        '\n--- Estado actual de CSV ---\n'
+        f'CSV en data/raw: {raw_count}\n'
+        f'CSV en data/analysis: {analysis_count}\n'
+        f'Carpeta backup: {BACKUP_DIR.relative_to(PROJECT_ROOT)}'
+    )
+
+
 def backup_and_clean(target_names: list[str], backup_type: str) -> Path | None:
     csv_files = list_csv_files(target_names)
     if not csv_files:
@@ -62,6 +73,7 @@ def backup_and_clean(target_names: list[str], backup_type: str) -> Path | None:
 
 
 def show_menu() -> None:
+    print(build_cleanup_dashboard())
     print('\n=== Limpieza CSV ===')
     print('1) Limpiar data/raw')
     print('2) Limpiar data/analysis')

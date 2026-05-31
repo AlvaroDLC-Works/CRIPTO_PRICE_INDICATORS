@@ -13,12 +13,22 @@
     {
       "key": "SYMBOLS",
       "label": "Simbolos base separados por coma. La moneda de intercambio se asume USDT.",
-      "default": "BTC,ETH"
+      "default": "BTC"
     },
     {
       "key": "TIMEFRAME",
       "label": "Intervalo de velas",
       "default": "1d"
+    },
+    {
+      "key": "LIMIT",
+      "label": "Cantidad de velas a descargar por batch",
+      "default": "1000"
+    },
+    {
+      "key": "SINCE",
+      "label": "Fecha de inicio para descargas historicas",
+      "default": "2026-03-01"
     }
   ]
 }

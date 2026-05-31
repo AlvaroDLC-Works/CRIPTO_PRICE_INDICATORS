@@ -5,6 +5,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from csv_file_logger import build_download_dashboard, build_unique_csv_path, log_csv_file
+except ImportError:
+    from scripts.csv_file_logger import build_download_dashboard, build_unique_csv_path, log_csv_file
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / 'data' / 'raw'
@@ -53,7 +58,13 @@ def build_exchange_sequence(primary_exchange: str, fallback_exchanges: list[str]
 
 def load_config() -> dict:
     env_path = PROJECT_ROOT / 'config' / '.env'
+    env_values = {}
     if env_path.exists():
+        for line in env_path.read_text(encoding='utf-8').splitlines():
+            stripped = line.strip()
+            if stripped and not stripped.startswith('#') and '=' in stripped:
+                key, value = stripped.split('=', 1)
+                env_values[key.strip()] = value.strip()
         try:
             from dotenv import load_dotenv
             load_dotenv(dotenv_path=env_path)
@@ -74,6 +85,14 @@ def load_config() -> dict:
         'timeframe': os.getenv('TIMEFRAME', '1d').strip(),
         'limit': int(os.getenv('LIMIT', '1000')),
         'since': parse_since(os.getenv('SINCE')),
+        'env_values': {
+            'EXCHANGE': os.getenv('EXCHANGE', 'binance').strip(),
+            'FALLBACK_EXCHANGES': os.getenv('FALLBACK_EXCHANGES', ','.join(DEFAULT_FALLBACK_EXCHANGES)).strip(),
+            'SYMBOLS': os.getenv('SYMBOLS', env_values.get('SYMBOLS', 'BTC,ETH')).strip(),
+            'TIMEFRAME': os.getenv('TIMEFRAME', '1d').strip(),
+            'LIMIT': os.getenv('LIMIT', '1000').strip(),
+            'SINCE': os.getenv('SINCE', env_values.get('SINCE', 'sin fecha inicial')).strip(),
+        },
     }
 
 
@@ -124,14 +143,18 @@ def fetch_ohlcv_all(exchange, symbol: str, timeframe: str, since_ms: int, limit:
 
 
 def build_csv_filename(symbol: str, exchange_name: str, timeframe: str, since_ms: int | None = None) -> Path:
-    base_symbol = symbol.split('/', 1)[0].strip().upper()
-    exchange_code = exchange_name.strip().lower()
-    since_code = '' if since_ms is None else f'{datetime.fromtimestamp(since_ms / 1000, tz=timezone.utc):%y%m%d}'
-    download_code = datetime.now(timezone.utc).strftime('%y%m%d%H%M%S')
-    return DATA_DIR / f'{exchange_code}{base_symbol}{timeframe}{since_code}{download_code}.csv'
+    return build_unique_csv_path(DATA_DIR, 'raw')
 
 
-def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '1d', limit: int = 500, since_ms: int | None = None, filename: str = None):
+def fetch_ohlcv_to_csv(
+    symbol: str,
+    exchange_name: str,
+    timeframe: str = '1d',
+    limit: int = 500,
+    since_ms: int | None = None,
+    filename: str = None,
+    dashboard: str = '',
+):
     """Fetch OHLCV data for a symbol from a public exchange and save it to CSV."""
     exchange_cls = getattr(ccxt, exchange_name, None)
     if exchange_cls is None:
@@ -162,6 +185,11 @@ def fetch_ohlcv_to_csv(symbol: str, exchange_name: str, timeframe: str = '1d', l
     filename = Path(filename)
     filename.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(filename, index=False)
+    description = (
+        f'Descarga raw OHLCV | exchange={exchange_name} | symbol={symbol} | '
+        f'timeframe={timeframe} | filas={len(df)}'
+    )
+    log_csv_file(filename, description, dashboard)
     print(f"Guardado: {filename} ({len(df)} filas)")
     return str(filename)
 
@@ -172,6 +200,7 @@ def fetch_ohlcv_to_csv_with_fallback(
     timeframe: str = '1d',
     limit: int = 500,
     since_ms: int | None = None,
+    dashboard: str = '',
 ) -> str:
     last_error = None
 
@@ -183,6 +212,7 @@ def fetch_ohlcv_to_csv_with_fallback(
                 timeframe=timeframe,
                 limit=limit,
                 since_ms=since_ms,
+                dashboard=dashboard,
             )
         except Exception as exc:
             last_error = exc
@@ -194,6 +224,7 @@ def fetch_ohlcv_to_csv_with_fallback(
 
 if __name__ == '__main__':
     config = load_config()
+    dashboard = build_download_dashboard(config['env_values'])
     for symbol in config['symbols']:
         fetch_ohlcv_to_csv_with_fallback(
             symbol,
@@ -201,4 +232,5 @@ if __name__ == '__main__':
             timeframe=config['timeframe'],
             limit=config['limit'],
             since_ms=config['since'],
+            dashboard=dashboard,
         )

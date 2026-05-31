@@ -114,12 +114,12 @@ def select_field(target_path: Path, fields: list[dict[str, str]]) -> dict[str, s
         lines = read_key_value_lines(target_path)
         values = get_key_value_data(lines, fields)
 
+        print(build_download_dashboard(values))
         print(f'\n=== Editar configuracion {display_path} ===')
         for index, field in enumerate(fields, start=1):
             key = field['key']
             print(f'{index}) {key} = {values[key]}')
         print(f'{exit_option}) Volver al menu principal')
-        print(build_download_dashboard(values))
 
         choice = input(f'Selecciona el dato a revisar [1-{exit_option}]: ').strip()
         if choice == str(exit_option):

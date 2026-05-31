@@ -33,8 +33,9 @@ def show_menu() -> None:
     print('1) Configurar Descarga (config/.env)')
     print('2) Descargar Datos (fetch_crypto_data)')
     print('3) Analisis de Datos')
-    print('4) Herramientas')
-    print('5) Salir')
+    print('4) Graficos')
+    print('5) Herramientas')
+    print('6) Salir')
 
 
 def show_tools_menu() -> None:
@@ -131,7 +132,7 @@ def tools_menu() -> None:
 def main() -> None:
     while True:
         show_menu()
-        choice = prompt_input('Selecciona una opcion [1-5]: ')
+        choice = prompt_input('Selecciona una opcion [1-6]: ')
         if choice is None:
             break
 
@@ -142,8 +143,10 @@ def main() -> None:
         elif choice == '3':
             run_script('scripts/analysis.py')
         elif choice == '4':
-            tools_menu()
+            run_script('scripts/charts.py')
         elif choice == '5':
+            tools_menu()
+        elif choice == '6':
             print('Saliendo...')
             break
         else:

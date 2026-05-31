@@ -81,6 +81,7 @@ Opciones disponibles:
 - Configurar descarga `config/.env`.
 - Descargar datos.
 - Abrir el submenu de analisis de datos.
+- Abrir el submenu de graficos.
 - Abrir herramientas de mantenimiento.
 - Salir.
 
@@ -99,6 +100,12 @@ El menu `Herramientas` permite:
 - Regenerar `config/env_config_fields.json` desde `config/.env`.
 - Limpiar CSV de `data/raw/`, `data/analysis/` o ambos, generando un backup `.zip` antes de borrar.
 - Acortar nombres de CSV existentes y registrar el cambio en `data/csv_files_log.txt`.
+
+El submenu `Graficos` permite:
+
+- Ver un grafico de velas en pantalla desde un CSV.
+- Exportar el grafico de velas a PDF horizontal.
+- Exportar columnas numericas a CAD/DXF usando un layer por columna.
 
 ## 7. Descargar datos
 

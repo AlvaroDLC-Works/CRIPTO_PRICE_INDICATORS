@@ -94,8 +94,9 @@ El menu principal muestra primero un dashboard con la configuracion de descarga 
 1) Configurar Descarga (config/.env)
 2) Descargar Datos (fetch_crypto_data)
 3) Analisis de Datos
-4) Herramientas
-5) Salir
+4) Graficos
+5) Herramientas
+6) Salir
 ```
 
 ## Uso
@@ -150,6 +151,23 @@ Los indicadores iniciales disponibles son:
 - `atr(length)`: volatilidad por rango verdadero promedio.
 - `roc(source, length)`: tasa de cambio.
 
+## Graficos
+
+La opcion `Graficos` del menu principal permite trabajar con CSV de `data/raw/` o `data/analysis/`:
+
+```text
+1) Ver en pantalla
+2) Exportar grafico en PDF horizontal
+3) Exportar grafico en CAD/DXF
+4) Volver al menu principal
+```
+
+- `Ver en pantalla`: genera un HTML con velas OHLC estilo TradingView y lo abre en el navegador.
+- `Exportar grafico en PDF horizontal`: crea un PDF en formato horizontal con velas OHLC.
+- `Exportar grafico en CAD/DXF`: exporta columnas numericas a DXF usando un layer por columna.
+
+En DXF, el eje X representa el orden temporal de los datos y el eje Y el valor de cada columna. Puedes elegir entre polilineas con puntos o solo puntos marcados con `X`.
+
 ## Nombre de archivos CSV
 
 Los archivos generados usan este formato:
@@ -183,6 +201,7 @@ El codigo usa `enableRateLimit=True` en `ccxt` y reintentos con backoff para evi
 - `config/signal_systems.json`: sistemas de senales creados para el modulo de analisis.
 - `data/raw/`: archivos CSV generados por las descargas.
 - `data/analysis/`: archivos CSV generados por sistemas de senales.
+- `data/charts/`: archivos HTML, PDF y DXF generados desde el menu de graficos.
 - `data/csv_files_log.txt`: bitacora de IDs cortos y descripcion de CSV generados.
 - `backup/`: archivos comprimidos generados por la limpieza de CSV.
 - `docs/`: documentacion extendida.

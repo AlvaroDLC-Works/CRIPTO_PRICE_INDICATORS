@@ -14,7 +14,7 @@
 
 - `main.py`: menu principal del proyecto.
 - `CriptoPriceStart.ps1`: instalador y lanzador principal para Windows.
-- `CriptoPriceStart.bat`: lanzador para CMD o doble clic en Windows.
+- `CriptoPriceStart.bat`: instalador y lanzador autonomo para CMD o doble clic en Windows.
 - `scripts/install.py`: prepara el entorno, crea `config/.env` si no existe y verifica dependencias.
 - `scripts/fetch_crypto_data.py`: descarga datos historicos OHLCV y los exporta a CSV.
 - `scripts/env_config_editor.py`: permite editar `config/.env` desde la terminal.
@@ -38,7 +38,7 @@ Ejecuta el instalador:
 .\CriptoPriceStart.ps1
 ```
 
-Tambien puedes ejecutar `CriptoPriceStart.bat` desde CMD o con doble clic en el explorador.
+Tambien puedes ejecutar `CriptoPriceStart.bat` desde CMD o con doble clic en el explorador. No depende del archivo `.ps1`.
 
 Si Python no esta instalado, el instalador intenta instalar Python 3 con `winget`. Luego crea `.venv`, ejecuta `scripts/install.py` automaticamente y abre `main.py`.
 

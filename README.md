@@ -9,7 +9,7 @@ Proyecto para descargar datos historicos de criptoactivos y generar archivos CSV
 ```
 
 El instalador verifica Python. Si no esta instalado, intenta instalar Python 3 con `winget`. Luego crea `.venv`, instala dependencias, crea `config/.env` desde `config/.env.example` si todavia no existe y abre el menu principal.
-Tambien puedes usar `CriptoPriceStart.bat` desde CMD o con doble clic en el explorador de Windows; internamente ejecuta el `.ps1` con la politica de ejecucion adecuada.
+Tambien puedes usar `CriptoPriceStart.bat` desde CMD o con doble clic en el explorador de Windows. El `.bat` es autonomo y no depende del archivo `.ps1`.
 
 Si PowerShell bloquea la ejecucion de scripts, usa:
 

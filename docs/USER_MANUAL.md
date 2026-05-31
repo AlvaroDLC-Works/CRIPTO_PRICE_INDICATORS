@@ -132,7 +132,9 @@ Los CSV se generan con las columnas:
 
 Ejemplo de nombre de archivo:
 
-- `bin_BTC_1d_250101_260530_214034.csv`
+- `raw26053114302901.csv`
+
+El identificador usa prefijo corto por tipo de archivo (`raw`, `ana`, `cha`), fecha y hora de generacion (`YYMMDDHHMMSS`) y un contador final de dos digitos.
 
 ## 9. Limites y buenas practicas
 
